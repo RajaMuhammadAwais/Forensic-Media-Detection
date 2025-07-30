@@ -1,0 +1,39 @@
+# Python bytecode
+__pycache__/
+
+# Specific Python files
+audio_detector.py
+fmd_cli.py
+image_detector.py
+test_audio_detector.py
+test_image_detector.py
+test_multimodal_detector.py
+test_video_detector.py
+
+# Directories related to specific forensics
+audio_forensics/
+image_forensics/
+video_forensics/
+
+# Data and media files
+data/
+dummy_image.jpg
+dummy_image.png
+dummy_video.mp4
+
+# Documentation files
+documentation/
+examples_and_tutorials.md
+technical_documentation.md
+user_manual.md
+
+# Tests folder
+tests/
+
+# General files
+MIT License.md
+README.md
+requirements.txt
+
+# Ignore all files in multimodal_analysis directory
+multimodal_analysis/
