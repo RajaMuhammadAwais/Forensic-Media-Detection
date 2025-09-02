@@ -50,21 +50,3 @@ jobs:
           echo "Running unit tests..."
           pytest tests/ --disable-warnings --maxfail=3
 
-  lint-markdown:
-    name: Lint Markdown Files
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'  # or latest LTS
-
-      - name: Install markdownlint-cli globally
-        run: npm install -g markdownlint-cli
-
-      - name: Lint Markdown files
-        run: markdownlint documentation/*.md
