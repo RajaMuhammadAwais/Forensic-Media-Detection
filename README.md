@@ -3,6 +3,7 @@
 
 <!-- Badges -->
 ![CI Status](https://github.com/RajaMuhammadAwais/Forensic-Media-Detection/actions/workflows/ci.yml/badge.svg)
+[![Release](https://img.shields.io/github/v/release/RajaMuhammadAwais/Forensic-Media-Detection)](https://github.com/RajaMuhammadAwais/Forensic-Media-Detection/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Last Commit](https://img.shields.io/github/last-commit/RajaMuhammadAwais/Forensic-Media-Detection)
 [![Coverage Status](https://img.shields.io/badge/coverage-unknown-lightgrey.svg)](https://github.com/RajaMuhammadAwais/Forensic-Media-Detection)
