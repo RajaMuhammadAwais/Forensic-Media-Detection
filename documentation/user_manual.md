@@ -140,15 +140,15 @@ fmd info
 
 The FMD tool provides detailed analysis results, typically in JSON format when the `--output` option is used. The output includes:
 
-*   **Deepfake Probability:** A score indicating the likelihood of the media being a deepfake.
-*   **Specific Anomalies:** Details about detected inconsistencies in pixels, lighting, frame-by-frame analysis, lip-sync, voice mismatch, and synthetic speech artifacts.
-*   **Overall Assessment:** A summary recommendation (e.g., "DEEPFAKE DETECTED", "SUSPICIOUS", "LIKELY AUTHENTIC").
+* **Deepfake Probability:** A score indicating the likelihood of the media being a deepfake.
+* **Specific Anomalies:** Details about detected inconsistencies in pixels, lighting, frame-by-frame analysis, lip-sync, voice mismatch, and synthetic speech artifacts.
+* **Overall Assessment:** A summary recommendation (e.g., "DEEPFAKE DETECTED", "SUSPICIOUS", "LIKELY AUTHENTIC").
 
 ## 5. Troubleshooting
 
-*   **"File not found" error:** Ensure the path to your media file is correct and the file exists.
-*   **Dependency issues:** If you encounter errors related to missing libraries, try reinstalling them using `pip install -r requirements.txt` (if a `requirements.txt` is provided) or the individual `pip install` commands listed in the Installation section.
-*   **Model loading errors:** Ensure you have sufficient memory and the correct TensorFlow/PyTorch versions installed. Some models might require pre-trained weights, which may need to be downloaded separately.
+* **"File not found" error:** Ensure the path to your media file is correct and the file exists.
+* **Dependency issues:** If you encounter errors related to missing libraries, try reinstalling them using `pip install -r requirements.txt` (if a `requirements.txt` is provided) or the individual `pip install` commands listed in the Installation section.
+* **Model loading errors:** Ensure you have sufficient memory and the correct TensorFlow/PyTorch versions installed. Some models might require pre-trained weights, which may need to be downloaded separately.
 
 For further assistance, please refer to the project's documentation or contact support.
 
