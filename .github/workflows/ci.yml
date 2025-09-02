@@ -45,7 +45,6 @@ jobs:
           echo "Running unit tests..."
           pytest tests/ --disable-warnings --maxfail=3
 
-  # Optional job for documentation
   build-docs:
     name: Build Documentation
     runs-on: ubuntu-latest
@@ -54,15 +53,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js (for markdownlint)
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.11'
+          node-version: '18'
 
-      - name: Install Markdown tools
-        run: |
-          pip install markdownlint-cli
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
 
       - name: Lint Markdown files
-        run: |
-          markdownlint documentation/*.md
+        run: markdownlint documentation/*.md
