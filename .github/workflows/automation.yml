@@ -1,0 +1,143 @@
+name: 'Repo Automation: contributors check, issue labeling & summaries'
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+  issues:
+    types: [opened]
+  schedule:
+    - cron: '0 9 * * *' # daily at 09:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  contributors-check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR body for contributing guideline reference
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const prNumber = pr.number;
+            const prAuthor = pr.user.login;
+            const body = (pr.body || '').toLowerCase();
+
+            const hasContributing = body.includes('contribut') || body.includes('contributing.md');
+
+            if (!hasContributing) {
+              const issueTitle = `Action required: Update PR #${prNumber} to follow contributing guidelines`;
+              const issueBody = `Hi @${prAuthor},\n\nThanks for the PR! It looks like the PR description doesn't reference the repository's contributing guidelines. Please review the \`CONTRIBUTING.md\` and update the description to confirm you followed the guidelines.\n\nThis issue was opened automatically to track the required follow-up.`;
+
+              // Create a tracking issue assigned to the PR author (if possible)
+              try {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: issueTitle,
+                  body: issueBody,
+                  labels: ['needs-action']
+                });
+              } catch (err) {
+                console.warn('Failed to create tracking issue: ' + err.message);
+              }
+
+              // Leave a comment on the PR
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: `:warning: Hi @${prAuthor} — please update the PR description to confirm you've read and followed the CONTRIBUTING guidelines. A tracking issue has been opened.`
+              });
+
+              throw new Error('Contributing guideline reference not found in PR body. A tracking issue was created and a comment posted.');
+            } else {
+              console.info('Contributing guideline reference found — continuing.');
+            }
+
+  label-issues:
+    if: github.event_name == 'issues' && (github.event.action == 'opened')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-label new issues
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = (issue.title || '').toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const issue_number = issue.number;
+
+            const labels = new Set();
+            if (/bug|error|crash|exception|traceback/.test(title) || /bug|error|crash|exception|traceback/.test(body)) labels.add('bug');
+            if (/feature|enhancement|request|proposal/.test(title) || /feature|enhancement|request|proposal/.test(body)) labels.add('enhancement');
+            if (/question|how to|how-to|help|usage/.test(title) || /question|how to|how-to|help|usage/.test(body)) labels.add('question');
+
+            if (labels.size === 0) labels.add('triage-needed');
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              labels: Array.from(labels)
+            });
+
+  summarize-issues:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate issue summary and update "Daily Issue Summary"
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Gather open issues (exclude pull requests)
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const filtered = issues.filter(i => !i.pull_request);
+
+            // Count by label
+            const countsByLabel = {};
+            for (const issue of filtered) {
+              const labels = issue.labels.map(l => typeof l === 'string' ? l : l.name);
+              if (labels.length === 0) {
+                countsByLabel['(no label)'] = (countsByLabel['(no label)'] || 0) + 1;
+              } else {
+                for (const label of labels) countsByLabel[label] = (countsByLabel[label] || 0) + 1;
+              }
+            }
+
+            const totalOpen = filtered.length;
+            const topNew = filtered.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,5);
+
+            let body = `## Daily Issue Summary\n\n- Total open issues: **${totalOpen}**\n\n### Counts by label\n`;
+            for (const [label, count] of Object.entries(countsByLabel)) {
+              body += `- ${label}: ${count}\n`;
+            }
+
+            body += `\n### 5 Newest open issues\n`;
+            for (const i of topNew) {
+              body += `- [#${i.number}](${i.html_url}) ${i.title} — opened by @${i.user.login} on ${new Date(i.created_at).toISOString().slice(0,10)}\n`;
+            }
+
+            // Find or create a persistent issue used for summaries
+            const summaryTitle = 'Daily Issue Summary';
+            const searchRes = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', per_page: 100 });
+            let summaryIssue = searchRes.data.find(it => it.title === summaryTitle && !it.pull_request);
+
+            if (!summaryIssue) {
+              const created = await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title: summaryTitle, body });
+              console.info(`Created summary issue #${created.data.number}`);
+            } else {
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: summaryIssue.number, body });
+              console.info(`Updated summary issue #${summaryIssue.number}`);
+            }
