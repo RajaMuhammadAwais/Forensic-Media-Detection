@@ -1,4 +1,4 @@
-name: Markdown Fixer Bot PR
+name: FMD Tool CI Pipeline
 
 on:
   push:
@@ -7,63 +7,68 @@ on:
     branches: [main]
 
 jobs:
-  fix-markdown:
-    name: Run Markdown Fixer and Create PR
+  build-and-test:
+    name: Build, Lint, and Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Needed for git history and PR creation
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 pytest
 
-      - name: Run markdown fixer on docs
+      - name: Lint Python code with flake8
         run: |
-          python markdown_fixer.py documentation/examples_and_tutorials.md
-          python markdown_fixer.py documentation/user_manual.md
-          python markdown_fixer.py documentation/technical_documentation.md
+          echo "Running Python linter..."
+          flake8 fmd_tool/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 fmd_tool/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
 
-      - name: Check for changes
-        id: git-check
+      - name: Run Python unit tests with pytest
         run: |
-          echo "::set-output name=changed::$(git status --porcelain | wc -l)"
+          echo "Running unit tests..."
+          pytest tests/ --disable-warnings --maxfail=3
 
-      - name: Create branch for fixes
-        if: steps.git-check.outputs.changed != '0'
+  lint-markdown:
+    name: Lint and Auto-Fix Markdown Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install markdownlint-cli2 globally
+        run: npm install -g markdownlint-cli2
+
+      - name: Auto-fix markdownlint issues
+        run: markdownlint --fix documentation/**/*.md
+
+      - name: Commit fixed markdown files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b markdown-fix-bot
-
-      - name: Commit fixes
-        if: steps.git-check.outputs.changed != '0'
-        run: |
-          git add documentation/
-          git commit -m "chore: auto fix markdownlint issues in docs"
-
-      - name: Push branch with fixes
-        if: steps.git-check.outputs.changed != '0'
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          branch: markdown-fix-bot
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Pull Request
-        if: steps.git-check.outputs.changed != '0'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: chore: auto fix markdownlint issues in docs
-          branch: markdown-fix-bot
-          title: "Auto-fix markdownlint issues in documentation"
-          body: |
-            This pull request fixes markdownlint issues automatically detected by the Markdown Fixer Bot.
+          git add documentation/**/*.md
+          git diff --cached --quiet || git commit -m "chore: auto-fix markdownlint issues"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
