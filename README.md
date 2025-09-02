@@ -1,6 +1,6 @@
 # Forensic Media Detection (FMD) Tool - Technical Documentation
 ![CI Status](https://github.com/RajaMuhammadAwais/Forensic-Media-Detection/actions/workflows/ci.yml/badge.svg)
-![Release](https://img.shields.io/github/v/release/RajaMuhammadAwais/Forensic-Media-Detection?include_prereleases)
+[![GitHub release](https://img.shields.io/github/v/release/RajaMuhammadAwais/Forensic-Media-Detection?style=flat-square)](https://github.com/RajaMuhammadAwais/Forensic-Media-Detection/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Last Commit](https://img.shields.io/github/last-commit/RajaMuhammadAwais/Forensic-Media-Detection)
 
