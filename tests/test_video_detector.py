@@ -15,7 +15,7 @@ class TestVideoDetector(unittest.TestCase):
         self.detector = VideoDetector(model_type="cnn_lstm")
         self.detector.build_model()
         # Create a dummy video file for testing
-        self.dummy_video_path = "fmd_tool/data/dummy_video.mp4"
+        self.dummy_video_path = "data/dummy_video.mp4"
         if not os.path.exists("fmd_tool/data"):
             os.makedirs("fmd_tool/data")
         # Create a simple black video using ffmpeg for testing
