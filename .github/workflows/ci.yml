@@ -37,8 +37,8 @@ jobs:
       - name: Lint Python code with flake8
         run: |
           echo "Running Python linter..."
-          flake8 fmd_tool/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 fmd_tool/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
+          flake8 audio_forensics/ image_forensics/ video_forensics/ multimodal_analysis/ cli/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 audio_forensics/ image_forensics/ video_forensics/ multimodal_analysis/ cli/ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
 
       - name: Run Python unit tests with pytest
         run: |
