@@ -1,8 +1,47 @@
+**0.0 - 0.3**: Likely authentic content
+**0.3 - 0.7**: Suspicious, requires further investigation
+**0.7 - 1.0**: High probability of manipulation/deepfake
+**For Images:**
+- **Pixel Inconsistencies**: Unusual patterns in pixel gradients
+- **Lighting Mismatch**: Inconsistent lighting across different regions
+**For Videos:**
+- **Frame-by-Frame Anomalies**: Inconsistencies between consecutive frames
+- **Lip Sync Mismatch**: Audio-visual synchronization issues
+**For Audio:**
+- **Voice Mismatch**: Speaker verification failures
+- **Synthetic Speech Artifacts**: Indicators of artificial voice generation
+**Problem**: "Could not load image/video/audio file"
+**Solution**:
+```bash
+**Problem**: Out of memory errors with large files
+**Solution**:
+```bash
+**Tips for faster analysis**:
+1. **Use appropriate models**: XceptionNet is faster than autoencoder for images
+2. **Preprocess media**: Resize images and trim videos to reduce processing time
+```python
+```
+```bash
+```
+```bash
+```
+1. **Image Quality**: Use high-resolution images (at least 256x256 pixels)
+2. **Video Quality**: Ensure good video quality with clear facial features
+3. **Audio Quality**: Use clear audio recordings without excessive noise
+1. **Start with Multimodal**: For videos, begin with multimodal analysis
+2. **Compare Models**: Use multiple models for critical analyses
+3. **Save Results**: Always save results for documentation and comparison
+4. **Verify Findings**: Cross-reference with other detection tools when possible
+1. **Consider Context**: High-quality deepfakes may score lower
+2. **Look for Patterns**: Multiple indicators increase confidence
+3. **Manual Review**: Always perform human verification for critical decisions
+4. **Document Process**: Keep detailed records of analysis procedures
 # Forensic Media Detection (FMD) Tool - Examples and Tutorials
 
 ## 1. Getting Started
 
-This document provides practical examples and step-by-step tutorials for using the FMD tool effectively.
+This document provides practical examples and step-by-step tutorials for using the FMD tool 
+effectively.
 
 ## 2. Basic Usage Examples
 
@@ -19,7 +58,7 @@ fmd image --check suspicious_photo.jpg --model xception
 
 # Saving results to a file
 fmd image --check suspicious_photo.jpg --model xception --output analysis_results.json
-```
+```bash
 
 **Expected Output**:
 ```
@@ -30,7 +69,7 @@ Image Analysis Results:
 - Deepfake Probability: 75.5%
 - Pixel Inconsistencies: Detected 64% probability of manipulation distributed.
 - Lighting Mismatch: 69% confidence deepfake.
-```
+```text
 
 ### 2.2. Analyzing a Video File
 
@@ -45,7 +84,7 @@ fmd video --check interview_video.mp4 --output video_analysis.json
 ```
 
 **Expected Output**:
-```
+```bash
 Analyzing video: interview_video.mp4
 Using model: cnn_lstm
 
@@ -65,7 +104,7 @@ fmd audio --check speech_sample.wav
 
 # Using x-vector model
 fmd audio --check speech_sample.wav --model xvector --output audio_results.json
-```
+```text
 
 **Expected Output**:
 ```
@@ -76,7 +115,7 @@ Audio Analysis Results:
 - Deepfake Probability: 67.3%
 - Voice Mismatch: Speaker not recognized with 72% confidence.
 - Synthetic Speech Artifacts: Detected 65% confidence of voice synthesis.
-```
+```bash
 
 ### 2.4. Comprehensive Multimodal Analysis
 
@@ -91,7 +130,7 @@ fmd multimodal --check complete_video.mp4 --output comprehensive_analysis.json
 ```
 
 **Expected Output**:
-```
+```text
 Analyzing media file: complete_video.mp4
 Using model: fusion_model
 
