@@ -1,0 +1,41 @@
+name: CLA Verification
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  verify-cla:
+    name: Verify Contributor License Agreement
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Extract PR Author
+        id: extract_author
+        run: echo "author=$(jq -r .pull_request.user.login $GITHUB_EVENT_PATH)" >> $GITHUB_OUTPUT
+
+      - name: Check CLA Signer Status
+        id: check_cla
+        run: |
+          echo "Checking CLA signature status..."
+          PR_AUTHOR="${{ steps.extract_author.outputs.author }}"
+          echo "PR Author: $PR_AUTHOR"
+
+          SIGNED=$(jq --arg user "$PR_AUTHOR" '.signers | index($user)' cla/cla-signers.json)
+
+          if [ "$SIGNED" == "null" ]; then
+            echo "CLA not signed by $PR_AUTHOR"
+            echo "signed=false" >> $GITHUB_OUTPUT
+          else
+            echo "CLA signed by $PR_AUTHOR"
+            echo "signed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fail if CLA is not signed
+        if: steps.check_cla.outputs.signed == 'false'
+        run: |
+          echo "::error::❌ Contributor has not signed the CLA. Please review and sign CLA.md before your PR can be merged."
+          exit 1
