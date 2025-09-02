@@ -1,3 +1,10 @@
+# FMD Tool
+
+![CI Status](https://github.com/your-org-or-user/fmd_tool/actions/workflows/fmd_ci.yml/badge.svg)
+![Release](https://img.shields.io/github/v/release/your-org-or-user/fmd_tool?include_prereleases)
+![License](https://img.shields.io/github/license/your-org-or-user/fmd_tool)
+![Last Commit](https://img.shields.io/github/last-commit/your-org-or-user/fmd_tool)
+
 # Forensic Media Detection (FMD) Tool - Technical Documentation
 
 ## 1. Overview
