@@ -7,6 +7,7 @@ from tensorflow.keras.applications import Xception # Using Xception for frame fe
 import cv2
 import numpy as np
 import os
+import glob
 
 class VideoDetector:
     def __init__(self, model_type='cnn_lstm'):
@@ -54,46 +55,76 @@ class VideoDetector:
         else:
             raise ValueError("Unsupported model type for Video Forensics.")
     def extract_frames(self, video_path, num_frames=30, target_size=(256, 256)):
-        """Extract frames from video for analysis and preprocess them."""
-        if not os.path.exists(video_path):
-            raise FileNotFoundError(f"Video file not found: {video_path}")
-            
-        cap = cv2.VideoCapture(video_path)
+        """Extract frames from video for analysis and preprocess them.
+
+        This function attempts several fallbacks to locate the provided video file so
+        tests and CI running from different working directories can still find it.
+        """
+        # Resolve video path with fallbacks to support different test/workdir setups
+        candidates = []
+        if os.path.exists(video_path):
+            resolved_path = video_path
+        else:
+            candidates.append(video_path)
+            # Try path relative to current working directory
+            cwd_path = os.path.join(os.getcwd(), video_path)
+            candidates.append(cwd_path)
+
+            # Try path relative to the package directory (repo_root/data/<basename>)
+            repo_root_data = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
+            pkg_data_path = os.path.join(repo_root_data, os.path.basename(video_path))
+            candidates.append(pkg_data_path)
+
+            # Search by basename anywhere under cwd
+            matches = glob.glob(os.path.join(os.getcwd(), '**', os.path.basename(video_path)), recursive=True)
+            candidates.extend(matches)
+
+            resolved_path = None
+            for c in candidates:
+                if os.path.exists(c):
+                    resolved_path = c
+                    break
+
+            if resolved_path is None:
+                tried_str = '\n'.join(candidates)
+                raise FileNotFoundError(f"Video file not found: {video_path}. Tried:\n{tried_str}")
+
+        # Open video capture
+        cap = cv2.VideoCapture(resolved_path)
         if not cap.isOpened():
-            raise IOError(f"Could not open video file: {video_path}")
-            
+            raise IOError(f"Could not open video file: {resolved_path}")
+
         frames = []
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        
+
         if total_frames == 0:
             cap.release()
             return np.array([])
 
         # Extract evenly spaced frames
-        # Ensure we don't try to extract more frames than available
         if num_frames > total_frames:
             num_frames = total_frames
-            
+
         frame_indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-        
+
         for idx in frame_indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
             ret, frame = cap.read()
-            if ret:
+            if ret and frame is not None:
                 frame = cv2.resize(frame, target_size)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(frame)
             else:
                 print(f"Warning: Could not read frame at index {idx}")
-        
+
         cap.release()
-        
+
         if not frames:
             return np.array([])
-            
+
         # Normalize pixel values to [0, 1]
         frames = np.array(frames).astype(np.float32) / 255.0
-        
+
         return frames
 
     def analyze_lip_sync(self, video_path, audio_path):

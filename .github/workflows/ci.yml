@@ -34,8 +34,10 @@ jobs:
           pip install -r requirements.txt
           pip install flake8 pytest
 
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install system dependencies (ffmpeg, OpenCV libs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgl1 libsm6 libxrender1 libxext6
 
       - name: Lint Python code with flake8
         run: |
