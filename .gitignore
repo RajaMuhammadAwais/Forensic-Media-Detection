@@ -1,10 +1,46 @@
+
+# Project demo/test files
 dummy_image.jpg
 dummy_image.png
 dummy_video.mp4
+
+# Documentation and test outputs
 documentation/
 tests/
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Pip
+pip-wheel-metadata/
+*.egg-info/
+
+# Build / distribution
+build/
+dist/
+
+# Data directories
 data/
-dummy_image.jpg
-dummy_image.png
-dummy_video.mp4
+
+# IDEs and editors
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# GitHub Actions artifacts and logs
+.github/workflows/*.log
+.github/actions/*
+
