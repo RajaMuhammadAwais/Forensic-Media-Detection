@@ -32,15 +32,21 @@ def fmd():
 @click.option("--model", default="xception", help="Model to use (xception, autoencoder)")
 @click.option("--detect", default="deepfake", help="Detection type")
 @click.option("--output", help="Output file for results (JSON format)")
-def image(check, model, detect, output):
+@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+def image(check, model, detect, output, json):
     """Analyze images for deepfake artifacts and manipulation."""
     
     if not os.path.exists(check):
-        click.echo(f"Error: File {check} not found.", err=True)
+        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error: File {check} not found.", err=True)
         return
     
-    click.echo(f"Analyzing image: {check}")
-    click.echo(f"Using model: {model}")
+    if not json:
+        click.echo(f"Analyzing image: {check}")
+        click.echo(f"Using model: {model}")
     
     try:
         # Initialize detector
@@ -51,9 +57,12 @@ def image(check, model, detect, output):
         import cv2
         img = cv2.imread(check)
         if img is None:
-            click.echo(f"Error: Could not load image {check}", err=True)
+            error = {"status": "error", "error_code": "IMAGE_LOAD_FAIL", "message": f"Could not load image {check}"}
+            if json:
+                click.echo(json.dumps(error))
+            else:
+                click.echo(f"Error: Could not load image {check}", err=True)
             return
-        
         img = cv2.resize(img, (256, 256))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = np.expand_dims(img / 255.0, axis=0)
@@ -85,40 +94,50 @@ def image(check, model, detect, output):
         }
         
         # Display results
-        click.echo("\nImage Analysis Results:")
-        click.echo(f"- Deepfake Probability: {prediction:.1%}")
-        if results["analysis_results"]["pixel_inconsistencies"]["detected"]:
-            prob = results["analysis_results"]["pixel_inconsistencies"]["probability"]
-            loc = results["analysis_results"]["pixel_inconsistencies"]["location"]
-            click.echo(f"- Pixel Inconsistencies: Detected {prob:.0%} probability of manipulation {loc}.")
-        
-        if results["analysis_results"]["lighting_mismatch"]["detected"]:
-            conf = results["analysis_results"]["lighting_mismatch"]["confidence"]
-            click.echo(f"- Lighting Mismatch: {conf:.0%} confidence deepfake.")
-        
-        # Save results if output specified
+        if json:
+            click.echo(json.dumps({"status": "success", "results": results}))
+        else:
+            click.echo("\nImage Analysis Results:")
+            click.echo(f"- Deepfake Probability: {prediction:.1%}")
+            if results["analysis_results"]["pixel_inconsistencies"]["detected"]:
+                prob = results["analysis_results"]["pixel_inconsistencies"]["probability"]
+                loc = results["analysis_results"]["pixel_inconsistencies"]["location"]
+                click.echo(f"- Pixel Inconsistencies: Detected {prob:.0%} probability of manipulation {loc}.")
+            if results["analysis_results"]["lighting_mismatch"]["detected"]:
+                conf = results["analysis_results"]["lighting_mismatch"]["confidence"]
+                click.echo(f"- Lighting Mismatch: {conf:.0%} confidence deepfake.")
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
-            click.echo(f"\nResults saved to: {output}")
-            
+            if not json:
+                click.echo(f"\nResults saved to: {output}")
     except Exception as e:
-        click.echo(f"Error during analysis: {str(e)}", err=True)
+        error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error during analysis: {str(e)}", err=True)
 
 @fmd.command()
 @click.option("--check", required=True, help="Path to video file to analyze")
 @click.option("--detect", default="deepfake", help="Detection type")
 @click.option("--model", default="cnn_lstm", help="Model to use")
 @click.option("--output", help="Output file for results (JSON format)")
-def video(check, detect, model, output):
+@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+def video(check, detect, model, output, json):
     """Analyze videos for deepfake artifacts and manipulation."""
     
     if not os.path.exists(check):
-        click.echo(f"Error: File {check} not found.", err=True)
+        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error: File {check} not found.", err=True)
         return
     
-    click.echo(f"Analyzing video: {check}")
-    click.echo(f"Using model: {model}")
+    if not json:
+        click.echo(f"Analyzing video: {check}")
+        click.echo(f"Using model: {model}")
     
     try:
         # Initialize detector
@@ -153,42 +172,51 @@ def video(check, detect, model, output):
         }
         
         # Display results
-        click.echo("\nVideo Analysis Results:")
-        click.echo(f"- Deepfake Probability: {prediction:.1%}")
-        
-        if results["analysis_results"]["frame_by_frame_check"]["anomalies_detected"]:
-            prob = results["analysis_results"]["frame_by_frame_check"]["probability"]
-            frames_affected = results["analysis_results"]["frame_by_frame_check"]["affected_frames"]
-            click.echo(f"- Frame-by-Frame Check: {prob:.0%} probability of manipulation between frames {frames_affected}.")
-        
-        if results["analysis_results"]["lip_sync_analysis"]["mismatch_detected"]:
-            conf = results["analysis_results"]["lip_sync_analysis"]["confidence"]
-            timestamp = results["analysis_results"]["lip_sync_analysis"]["timestamp"]
-            click.echo(f"- Lip Sync Mismatch: Detected {conf:.0%} confidence at timestamp {timestamp}.")
-        
-        # Save results if output specified
+        if json:
+            click.echo(json.dumps({"status": "success", "results": results}))
+        else:
+            click.echo("\nVideo Analysis Results:")
+            click.echo(f"- Deepfake Probability: {prediction:.1%}")
+            if results["analysis_results"]["frame_by_frame_check"]["anomalies_detected"]:
+                prob = results["analysis_results"]["frame_by_frame_check"]["probability"]
+                frames_affected = results["analysis_results"]["frame_by_frame_check"]["affected_frames"]
+                click.echo(f"- Frame-by-Frame Check: {prob:.0%} probability of manipulation between frames {frames_affected}.")
+            if results["analysis_results"]["lip_sync_analysis"]["mismatch_detected"]:
+                conf = results["analysis_results"]["lip_sync_analysis"]["confidence"]
+                timestamp = results["analysis_results"]["lip_sync_analysis"]["timestamp"]
+                click.echo(f"- Lip Sync Mismatch: Detected {conf:.0%} confidence at timestamp {timestamp}.")
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
-            click.echo(f"\nResults saved to: {output}")
-            
+            if not json:
+                click.echo(f"\nResults saved to: {output}")
     except Exception as e:
-        click.echo(f"Error during analysis: {str(e)}", err=True)
+        error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error during analysis: {str(e)}", err=True)
 
 @fmd.command()
 @click.option("--check", required=True, help="Path to audio file to analyze")
 @click.option("--model", default="xvector", help="Model to use (xvector, cnn_lstm)")
 @click.option("--detect", default="deepfake", help="Detection type")
 @click.option("--output", help="Output file for results (JSON format)")
-def audio(check, model, detect, output):
+@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+def audio(check, model, detect, output, json):
     """Analyze audio for synthetic voice and manipulation."""
     
     if not os.path.exists(check):
-        click.echo(f"Error: File {check} not found.", err=True)
+        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error: File {check} not found.", err=True)
         return
     
-    click.echo(f"Analyzing audio: {check}")
-    click.echo(f"Using model: {model}")
+    if not json:
+        click.echo(f"Analyzing audio: {check}")
+        click.echo(f"Using model: {model}")
     
     try:
         # Initialize detector
@@ -224,39 +252,48 @@ def audio(check, model, detect, output):
         }
         
         # Display results
-        click.echo("\nAudio Analysis Results:")
-        click.echo(f"- Deepfake Probability: {prediction:.1%}")
-        
-        if results["analysis_results"]["voice_mismatch"]["speaker_not_recognized"]:
-            conf = results["analysis_results"]["voice_mismatch"]["confidence"]
-            click.echo(f"- Voice Mismatch: Speaker not recognized with {conf:.0%} confidence.")
-        
-        if results["analysis_results"]["synthetic_speech_artifacts"]["detected"]:
-            conf = results["analysis_results"]["synthetic_speech_artifacts"]["confidence"]
-            click.echo(f"- Synthetic Speech Artifacts: Detected {conf:.0%} confidence of voice synthesis.")
-        
-        # Save results if output specified
+        if json:
+            click.echo(json.dumps({"status": "success", "results": results}))
+        else:
+            click.echo("\nAudio Analysis Results:")
+            click.echo(f"- Deepfake Probability: {prediction:.1%}")
+            if results["analysis_results"]["voice_mismatch"]["speaker_not_recognized"]:
+                conf = results["analysis_results"]["voice_mismatch"]["confidence"]
+                click.echo(f"- Voice Mismatch: Speaker not recognized with {conf:.0%} confidence.")
+            if results["analysis_results"]["synthetic_speech_artifacts"]["detected"]:
+                conf = results["analysis_results"]["synthetic_speech_artifacts"]["confidence"]
+                click.echo(f"- Synthetic Speech Artifacts: Detected {conf:.0%} confidence of voice synthesis.")
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
-            click.echo(f"\nResults saved to: {output}")
-            
+            if not json:
+                click.echo(f"\nResults saved to: {output}")
     except Exception as e:
-        click.echo(f"Error during analysis: {str(e)}", err=True)
+        error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error during analysis: {str(e)}", err=True)
 
 @fmd.command()
 @click.option("--check", required=True, help="Path to media file to analyze")
 @click.option("--model", default="fusion_model", help="Model to use")
 @click.option("--output", help="Output file for results (JSON format)")
-def multimodal(check, model, output):
+@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+def multimodal(check, model, output, json):
     """Perform comprehensive multimodal analysis."""
     
     if not os.path.exists(check):
-        click.echo(f"Error: File {check} not found.", err=True)
+        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error: File {check} not found.", err=True)
         return
     
-    click.echo(f"Analyzing media file: {check}")
-    click.echo(f"Using model: {model}")
+    if not json:
+        click.echo(f"Analyzing media file: {check}")
+        click.echo(f"Using model: {model}")
     
     try:
         # Initialize multimodal detector
@@ -323,31 +360,32 @@ def multimodal(check, model, output):
         }
         
         # Display results
-        click.echo("\nMultimodal Analysis Results:")
-        
-        if results["multimodal_analysis_results"]["image_analysis"]:
-            click.echo("- Image: Detected unusual pixel anomalies.")
-        
-        if results["multimodal_analysis_results"]["video_analysis"]:
-            conf = results["multimodal_analysis_results"]["video_analysis"]["confidence"]
-            click.echo(f"- Video: Lip sync detected at {conf:.0%} confidence.")
-        
-        if results["multimodal_analysis_results"]["audio_analysis"]:
-            conf = results["multimodal_analysis_results"]["audio_analysis"]["confidence"]
-            click.echo(f"- Audio: Voice mismatch detected ({conf:.0%} confidence).")
-        
-        overall = results["multimodal_analysis_results"]["overall_assessment"]
-        click.echo(f"Overall: {overall['deepfake_probability']:.0%} probability of deepfake detected.")
-        click.echo(f"Recommendation: {overall['recommendation']}")
-        
-        # Save results if output specified
+        if json:
+            click.echo(json.dumps({"status": "success", "results": results}))
+        else:
+            click.echo("\nMultimodal Analysis Results:")
+            if results["multimodal_analysis_results"]["image_analysis"]:
+                click.echo("- Image: Detected unusual pixel anomalies.")
+            if results["multimodal_analysis_results"]["video_analysis"]:
+                conf = results["multimodal_analysis_results"]["video_analysis"]["confidence"]
+                click.echo(f"- Video: Lip sync detected at {conf:.0%} confidence.")
+            if results["multimodal_analysis_results"]["audio_analysis"]:
+                conf = results["multimodal_analysis_results"]["audio_analysis"]["confidence"]
+                click.echo(f"- Audio: Voice mismatch detected ({conf:.0%} confidence).")
+            overall = results["multimodal_analysis_results"]["overall_assessment"]
+            click.echo(f"Overall: {overall['deepfake_probability']:.0%} probability of deepfake detected.")
+            click.echo(f"Recommendation: {overall['recommendation']}")
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
-            click.echo(f"\nResults saved to: {output}")
-            
+            if not json:
+                click.echo(f"\nResults saved to: {output}")
     except Exception as e:
-        click.echo(f"Error during analysis: {str(e)}", err=True)
+        error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error during analysis: {str(e)}", err=True)
 
 @fmd.command()
 def info():
