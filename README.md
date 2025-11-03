@@ -194,7 +194,35 @@ End-to-end testing of the complete pipeline:
 - **Configurable Models**: Support for different model architectures
 - **Extensible Framework**: Plugin architecture for custom detectors
 
-## 10. Dependencies
+## 10. Supported Pretrained Models
+
+You can use the following pretrained models with the FMD tool for each modality:
+
+### Image Forensics
+- **XceptionNet** (recommended):
+  - Pretrained on ImageNet, widely used for deepfake detection (e.g., FaceForensics++, DeepFakeDetection).
+  - Download from: [Keras Applications](https://keras.io/api/applications/xception/) or [DeepFakeDetection Challenge](https://www.kaggle.com/c/deepfake-detection-challenge/data)
+- **Autoencoder**:
+  - You can use any convolutional autoencoder trained on authentic images from your domain.
+
+### Video Forensics
+- **CNN-LSTM**:
+  - Use a CNN (e.g., Xception, ResNet50) for frame feature extraction, pretrained on ImageNet.
+  - LSTM weights can be trained on video deepfake datasets (e.g., FaceForensics++, DFDC).
+  - Example: [DeepFakeDetection](https://github.com/ondyari/FaceForensics) or [Kaggle DFDC](https://www.kaggle.com/c/deepfake-detection-challenge/data)
+
+### Audio Forensics
+- **X-Vector**:
+  - Pretrained x-vector models for speaker verification (e.g., Kaldi x-vector, SpeechBrain).
+  - Download from: [SpeechBrain Pretrained Models](https://huggingface.co/speechbrain) or [Kaldi VoxCeleb](https://kaldi-asr.org/models/m7)
+- **CNN-LSTM**:
+  - You can use a CNN-LSTM trained for audio deepfake detection (e.g., ASVspoof challenge models).
+
+### Multimodal Fusion
+- **Late Fusion**:
+  - The fusion model can be trained using outputs from the above pretrained models on a multimodal dataset.
+
+## 11. Dependencies
 
 ### 10.1. Core Libraries
 
