@@ -88,6 +88,7 @@ The Video Forensics module employs a CNN-LSTM hybrid architecture for temporal a
 
 - **Temporal Anomaly Detection**: Identifies inconsistencies in frame sequences
 - **Lip-Sync Analysis**: Detects audio-visual synchronization mismatches
+- **Real-Time Deepfake Detection**: Frame-by-frame analysis for live video streams or files (via `fmd realtime-video`)
 - **Frame-by-Frame Analysis**: Detailed examination of individual frames
 
 ### 4.3. Model Details
@@ -114,6 +115,7 @@ The Audio Forensics module implements x-vector inspired architecture for speaker
 - **Spectral Anomaly Detection**: Analysis of frequency domain characteristics
 - **Voice Synthesis Detection**: Identification of synthetic speech artifacts
 - **Speaker Verification**: Comparison against known speaker profiles
+- **Real-Time Audio Detection**: Chunk-by-chunk analysis for simulated live audio streams (via `fmd realtime-audio`)
 
 ### 5.3. Model Details
 
@@ -162,6 +164,15 @@ The CLI is built using the Click library and provides a user-friendly interface 
 - **Click Framework**: Provides command parsing and help generation
 - **JSON Output**: Structured output format for programmatic access
 - **Progress Indicators**: User feedback during analysis
+
+## 7.3. Real-Time Analysis Commands
+
+The CLI now includes commands for real-time analysis:
+
+| Command | Description | Options |
+| :--- | :--- | :--- |
+| `fmd realtime-video` | Runs real-time deepfake detection on a video source (webcam or file). | `--source` (0 for webcam, or path to video file) |
+| `fmd realtime-audio` | Runs a simulation of real-time audio deepfake detection. | `--source` (path to audio file for simulation) |
 
 ## 8. Testing Framework
 
@@ -242,7 +253,7 @@ You can use the following pretrained models with the FMD tool for each modality:
 ### 11.1. Planned Features
 
 - **Early Fusion**: Feature-level fusion for improved accuracy
-- **Real-time Processing**: Streaming analysis capabilities
+- **Real-time Processing**: Streaming analysis capabilities (Partially implemented in this version)
 - **Model Training Pipeline**: Automated training on new datasets
 - **Web Interface**: Browser-based user interface
 
