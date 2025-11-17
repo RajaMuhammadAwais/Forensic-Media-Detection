@@ -29,7 +29,7 @@ def fmd():
 
 @fmd.command()
 @click.option("--check", required=True, help="Path to image file to analyze")
-@click.option("--model", default="xception", help="Model to use (xception, autoencoder)")
+@click.option("--model", default="xception", help="Model to use (xception, autoencoder, vit)")
 @click.option("--detect", default="deepfake", help="Detection type")
 @click.option("--output", help="Output file for results (JSON format)")
 @click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
@@ -53,45 +53,12 @@ def image(check, model, detect, output, json):
         detector = ImageDetector(model_type=model)
         detector.build_model()
         
-        # Load and preprocess image
-        import cv2
-        img = cv2.imread(check)
-        if img is None:
-            error = {"status": "error", "error_code": "IMAGE_LOAD_FAIL", "message": f"Could not load image {check}"}
-            if json:
-                click.echo(json.dumps(error))
-            else:
-                click.echo(f"Error: Could not load image {check}", err=True)
-            return
-        img = cv2.resize(img, (256, 256))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = np.expand_dims(img / 255.0, axis=0)
+        # Use the comprehensive analysis method
+        results = detector.analyze_image(check)
         
-        # Make prediction (using random values for demo since model isn\'t trained)
-        # In real implementation, this would use the trained model
-        prediction = np.random.random()  # Placeholder
-        
-        # Analyze results
-        pixel_inconsistency = prediction * 0.85
-        lighting_mismatch = prediction * 0.92
-        
-        results = {
-            "file": check,
-            "model_used": model,
-            "detection_type": detect,
-            "analysis_results": {
-                "deepfake_probability": float(prediction),
-                "pixel_inconsistencies": {
-                    "detected": pixel_inconsistency > 0.5,
-                    "probability": float(pixel_inconsistency),
-                    "location": "near the eyes" if pixel_inconsistency > 0.7 else "distributed"
-                },
-                "lighting_mismatch": {
-                    "detected": lighting_mismatch > 0.5,
-                    "confidence": float(lighting_mismatch)
-                }
-            }
-        }
+        # The analyze_image method already returns a complete dictionary of results
+        # We need to extract the final prediction for the CLI output
+        prediction = results['overall_assessment']['deepfake_probability']
         
         # Display results
         if json:
@@ -99,18 +66,30 @@ def image(check, model, detect, output, json):
         else:
             click.echo("\nImage Analysis Results:")
             click.echo(f"- Deepfake Probability: {prediction:.1%}")
-            if results["analysis_results"]["pixel_inconsistencies"]["detected"]:
-                prob = results["analysis_results"]["pixel_inconsistencies"]["probability"]
-                loc = results["analysis_results"]["pixel_inconsistencies"]["location"]
-                click.echo(f"- Pixel Inconsistencies: Detected {prob:.0%} probability of manipulation {loc}.")
-            if results["analysis_results"]["lighting_mismatch"]["detected"]:
-                conf = results["analysis_results"]["lighting_mismatch"]["confidence"]
-                click.echo(f"- Lighting Mismatch: {conf:.0%} confidence deepfake.")
+            
+            # Display details from the comprehensive analysis
+            if 'pixel_inconsistencies' in results:
+                pixel_analysis = results['pixel_inconsistencies']
+                if pixel_analysis["detected"]:
+                    prob = pixel_analysis["score"]
+                    click.echo(f"- Pixel Inconsistencies: Detected with score {prob:.4f}.")
+            
+            if 'lighting_analysis' in results:
+                lighting_analysis = results['lighting_analysis']
+                if lighting_analysis["is_inconsistent"]:
+                    conf = lighting_analysis["confidence"]
+                    click.echo(f"- Lighting Mismatch: {conf:.0%} confidence of inconsistency.")
+            
+            if results['model_prediction'] is not None:
+                click.echo(f"- Model Prediction ({model}): {results['model_prediction']:.1%}")
+            
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
             if not json:
                 click.echo(f"\nResults saved to: {output}")
+        
+
     except Exception as e:
         error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
         if json:
