@@ -50,10 +50,11 @@ fmd_tool/
 
 ### 3.1. Architecture
 
-The Image Forensics module implements two primary detection approaches:
+The Image Forensics module implements three primary detection approaches:
 
-1. **XceptionNet-based Classifier**: A pre-trained Xception model fine-tuned for deepfake detection
-2. **Autoencoder-based Anomaly Detection**: An autoencoder that learns to reconstruct authentic images and flags anomalies
+1. **Vision Transformer (ViT) Classifier**: A PyTorch-based ViT model for state-of-the-art generalization.
+2. **XceptionNet-based Classifier**: A TensorFlow-based Xception model fine-tuned for deepfake detection.
+3. **Autoencoder-based Anomaly Detection**: An autoencoder that learns to reconstruct authentic images and flags anomalies.
 
 ### 3.2. Key Features
 
@@ -199,7 +200,10 @@ End-to-end testing of the complete pipeline:
 You can use the following pretrained models with the FMD tool for each modality:
 
 ### Image Forensics
-- **XceptionNet** (recommended):
+- **Vision Transformer (ViT)** (recommended for generalization):
+  - Based on the latest research, ViT models offer superior cross-dataset generalization.
+  - Uses a pre-trained ViT-B/16 backbone (PyTorch).
+- **XceptionNet**:
   - Pretrained on ImageNet, widely used for deepfake detection (e.g., FaceForensics++, DeepFakeDetection).
   - Download from: [Keras Applications](https://keras.io/api/applications/xception/) or [DeepFakeDetection Challenge](https://www.kaggle.com/c/deepfake-detection-challenge/data)
 - **Autoencoder**:
@@ -226,7 +230,8 @@ You can use the following pretrained models with the FMD tool for each modality:
 
 ### 10.1. Core Libraries
 
-- **TensorFlow**: Deep learning framework for model implementation
+- **TensorFlow**: Deep learning framework for model implementation (used for Xception and Autoencoder)
+- **PyTorch**: Deep learning framework for model implementation (used for Vision Transformer)
 - **OpenCV**: Computer vision operations for image and video processing
 - **Librosa**: Audio processing and feature extraction
 - **Scikit-learn**: Machine learning utilities and preprocessing
@@ -250,7 +255,7 @@ You can use the following pretrained models with the FMD tool for each modality:
 
 - **Adversarial Robustness**: Defense against adversarial attacks
 - **Explainable AI**: Interpretable detection results
-- **Cross-dataset Generalization**: Improved performance across different datasets
+- **Cross-dataset Generalization**: Improved performance across different datasets (partially addressed by ViT model)
 
   # Forensic Media Detection (FMD) Tool - User Manual
 
