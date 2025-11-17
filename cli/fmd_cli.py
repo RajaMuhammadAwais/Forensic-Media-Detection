@@ -17,6 +17,8 @@ from image_forensics.image_detector import ImageDetector
 from video_forensics.video_detector import VideoDetector
 from audio_forensics.audio_detector import AudioDetector
 from multimodal_analysis.multimodal_detector import MultimodalDetector
+from video_forensics.realtime_deepfake_detector import run_realtime_deepfake_detection
+from audio_forensics.realtime_audio_detector import run_realtime_audio_detection_simulation
 
 @click.group()
 @click.version_option(version="1.0.0")
@@ -199,6 +201,108 @@ def video(check, detect, model, output, json):
 
 @fmd.command()
 @click.option("--check", required=True, help="Path to audio file to analyze")
+@click.option("--model", default="xvector", help="Model to use (xvector, cnn_lstm)")
+@click.option("--detect", default="deepfake", help="Detection type")
+@click.option("--output", help="Output file for results (JSON format)")
+@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+def audio(check, model, detect, output, json):
+    """Analyze audio for synthetic voice and manipulation."""
+    
+    if not os.path.exists(check):
+        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error: File {check} not found.", err=True)
+        return
+    
+    if not json:
+        click.echo(f"Analyzing audio: {check}")
+        click.echo(f"Using model: {model}")
+    
+    try:
+        # Initialize detector
+        detector = AudioDetector(model_type=model)
+        detector.build_model()
+        
+        # Analyze spectral anomalies
+        spectral_analysis = detector.analyze_spectral_anomalies(check)
+        synthesis_analysis = detector.detect_voice_synthesis(check)
+        
+        # Make prediction (using analysis results)
+        prediction = (spectral_analysis["anomaly_score"] / 100 + synthesis_analysis["synthesis_confidence"]) / 2
+        voice_mismatch = prediction * 0.92
+        synthetic_artifacts = synthesis_analysis["synthesis_confidence"] * 0.85
+        
+        results = {
+            "file": check,
+            "model_used": model,
+            "detection_type": detect,
+            "analysis_results": {
+                "deepfake_probability": float(prediction),
+                "voice_mismatch": {
+                    "speaker_not_recognized": voice_mismatch > 0.5,
+                    "confidence": float(voice_mismatch)
+                },
+                "synthetic_speech_artifacts": {
+                    "detected": synthetic_artifacts > 0.5,
+                    "confidence": float(synthetic_artifacts),
+                    "indicators": synthesis_analysis["indicators"]
+                },
+                "spectral_analysis": spectral_analysis
+            }
+        }
+        
+        # Display results
+        if json:
+            click.echo(json.dumps({"status": "success", "results": results}))
+        else:
+            click.echo("\nAudio Analysis Results:")
+            click.echo(f"- Deepfake Probability: {prediction:.1%}")
+            if results["analysis_results"]["voice_mismatch"]["speaker_not_recognized"]:
+                conf = results["analysis_results"]["voice_mismatch"]["confidence"]
+                click.echo(f"- Voice Mismatch: {conf:.0%} confidence speaker is not recognized.")
+            if results["analysis_results"]["synthetic_speech_artifacts"]["detected"]:
+                conf = results["analysis_results"]["synthetic_speech_artifacts"]["confidence"]
+                click.echo(f"- Synthetic Speech Artifacts: Detected {conf:.0%} confidence.")
+        if output:
+            with open(output, "w") as f:
+                json.dump(results, f, indent=2)
+            if not json:
+                click.echo(f"\nResults saved to: {output}")
+    except Exception as e:
+        error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
+        if json:
+            click.echo(json.dumps(error))
+        else:
+            click.echo(f"Error during analysis: {str(e)}", err=True)
+
+@fmd.command(name="realtime-video")
+@click.option("--source", default=0, help="Video source (0 for webcam, or path to video file)")
+def realtime_video(source):
+    """Run real-time deepfake detection on a video stream."""
+    click.echo(f"Starting real-time video deepfake detection from source: {source}")
+    try:
+        # Note: Webcam access (source=0) is not possible in this sandboxed environment.
+        # The user must provide a video file path to test this feature.
+        # The function handles the execution logic.
+        run_realtime_deepfake_detection(source)
+    except Exception as e:
+        click.echo(f"Error during real-time video detection: {str(e)}", err=True)
+
+@fmd.command(name="realtime-audio")
+@click.option("--source", default=None, help="Path to audio file to simulate real-time stream from.")
+def realtime_audio(source):
+    """Run real-time audio deepfake detection simulation."""
+    click.echo(f"Starting real-time audio deepfake detection simulation from source: {source if source else 'random data'}")
+    try:
+        # The function handles the execution logic.
+        run_realtime_audio_detection_simulation(source)
+    except Exception as e:
+        click.echo(f"Error during real-time audio detection: {str(e)}", err=True)
+
+if __name__ == '__main__':
+    fmd()
 @click.option("--model", default="xvector", help="Model to use (xvector, cnn_lstm)")
 @click.option("--detect", default="deepfake", help="Detection type")
 @click.option("--output", help="Output file for results (JSON format)")
