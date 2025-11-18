@@ -1,4 +1,4 @@
-name: Commit Activity Graph
+name: Repository Trend Graphs
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-update-graph:
+  build-and-update-graphs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -22,17 +22,24 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install minimal deps
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install matplotlib==3.* requests==2.*
+          pip install matplotlib==3.* requests==2.* pandas==2.*
 
-      - name: Generate graph.png
+      - name: Generate commit activity graph (graph.png)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python scripts/github_commits_graph.py --days 365 --output graph.png
+
+      - name: Generate code frequency and issues/PR trend graphs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python scripts/github_repo_trends.py
 
       - name: Commit and push if changed
         env:
@@ -40,12 +47,17 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -e
-          if [[ -n "$(git status --porcelain graph.png)" ]]; then
+          CHANGED=""
+          for f in graph.png code_frequency.png issues_pr_trend.png; do
+            if [[ -n "$(git status --porcelain "$f")" ]]; then
+              CHANGED="yes"
+              git add "$f"
+            fi
+          done
+          if [[ -n "$CHANGED" ]]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-            git add graph.png
-            git commit -m "chore: update commit activity graph [skip ci]"
+            git commit -m "chore: update repository trend graphs [skip ci]"
             # Use a token to push back
             repo_url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git push "${repo_url}" HEAD:${GITHUB_REF#refs/heads/}

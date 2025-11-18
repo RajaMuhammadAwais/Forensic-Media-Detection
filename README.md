@@ -257,20 +257,7 @@ You can use the following pretrained models with the FMD tool for each modality:
 - **Explainable AI**: Interpretable detection results
 - **Cross-dataset Generalization**: Improved performance across different datasets (partially addressed by ViT model)
 
-## 12. GitHub Analytics Charts
-
-This repository automatically generates a daily commit activity graph via GitHub Actions. The workflow runs on a schedule and updates the image at the root of the repo.
-
-Current auto-generated chart:
-![Commit Activity (last 365 days)](graph.png)
-
-```
-
-Notes:
-- The GitHub Action defined in .github/workflows/commit-graph.yml installs minimal dependencies, generates graph.png, and commits it back to the repository.
-- If you fork this repo, ensure Actions are enabled in your fork and that the default branch has workflow permissions to write contents.
-
-  # Forensic Media Detection (FMD) Tool - User Manual
+# Forensic Media Detection (FMD) Tool - User Manual
 
 ## 1. Introduction
 
@@ -423,4 +410,20 @@ The FMD tool provides detailed analysis results, typically in JSON format when t
 *   **Model loading errors:** Ensure you have sufficient memory and the correct TensorFlow/PyTorch versions installed. Some models might require pre-trained weights, which may need to be downloaded separately.
 
 For further assistance, please refer to the project's documentation or contact support.
+
+## GitHub Repository Insights
+
+To keep analytics visible at the end of the README (not in assets), the following live and auto-generated graphs are included:
+
+- Contribution Graph (user activity):
+  ![Contribution Activity](https://github-readme-activity-graph.vercel.app/graph?username=RajaMuhammadAwais&custom_title=Contribution%20Graph&hide_border=true&bg_color=0d1117&color=58a6ff&line=58a6ff&point=ffffff)
+
+- Code Frequency (Additions vs Deletions):
+  ![Code Frequency](code_frequency.png)
+
+- Commit Activity (last 365 days):
+  ![Commit Activity](graph.png)
+
+- Issues & Pull Requests Trend:
+  ![Issues & PRs Trend](issues_pr_trend.png)
 
