@@ -264,16 +264,6 @@ This repository automatically generates a daily commit activity graph via GitHub
 Current auto-generated chart:
 ![Commit Activity (last 365 days)](graph.png)
 
-Manual generation (optional):
-```bash
-# Optional: set a token to avoid API rate limits
-export GITHUB_TOKEN=ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
-# Provide owner/repo explicitly if not running in GitHub Actions
-export GITHUB_REPOSITORY="RajaMuhammadAwais/Forensic-Media-Detection"
-
-# Run the generator
-python scripts/github_commits_graph.py --days 365 --output graph.png
 ```
 
 Notes:
