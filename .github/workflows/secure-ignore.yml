@@ -1,0 +1,154 @@
+name: Secure ignore and secrets automation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/secure-ignore.yml"
+
+jobs:
+  ignore-and-untrack:
+    name: Enforce .gitignore and untrack files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Ensure .gitignore entries
+        shell: bash
+        run: |
+          set -euo pipefail
+          touch .gitignore
+          add_line() { grep -qxF "$1" .gitignore || echo "$1" >> .gitignore; }
+
+          add_line ""
+          add_line "# Secrets"
+          add_line "secret.env"
+          add_line "config.json"
+
+          add_line ""
+          add_line "# Logs"
+          add_line "*.log"
+
+          add_line ""
+          add_line "# Node.js"
+          add_line "node_modules/"
+
+          add_line ""
+          add_line "# Build"
+          add_line "build/"
+
+      - name: Untrack ignored files (if tracked)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm --cached -f secret.env || true
+          git rm --cached -f config.json || true
+          git rm --cached -r -f build || true
+          git rm --cached -r -f node_modules || true
+
+          # Untrack any tracked *.log files
+          tracked_logs=$(git ls-files '*.log' || true)
+          if [ -n "${tracked_logs}" ]; then
+            # Use xargs -r to avoid running with empty input
+            printf "%s\n" "${tracked_logs}" | xargs -r git rm --cached -f || true
+          fi
+
+      - name: Commit and push changes (if any)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage .gitignore and any removals
+          git add .gitignore || true
+
+          # Commit only if there are staged changes
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: enforce ignores and untrack secret/log/build/node_modules"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+
+  assume-unchanged:
+    name: Alternate method (assume unchanged)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Mark files as assume-unchanged (local-only effect)
+        shell: bash
+        run: |
+          git update-index --assume-unchanged secret.env || true
+          git update-index --assume-unchanged config.json || true
+
+  git-secret:
+    name: git-secret setup and encrypt
+    runs-on: ubuntu-latest
+    # Requires repository secrets: GPG_PRIVATE_KEY, GPG_PASSPHRASE (optional), GPG_EMAIL
+    if: ${{ secrets.GPG_PRIVATE_KEY != '' && secrets.GPG_EMAIL != '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install git-secret and GnuPG
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-secret gnupg
+
+      - name: Import GPG private key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${GPG_PASSPHRASE:-}" ]; then
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import
+          else
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          fi
+          gpg --list-keys
+
+      - name: Initialize git-secret, add user, add and encrypt secret file
+        env:
+          GPG_EMAIL: ${{ secrets.GPG_EMAIL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git secret init || true
+          git secret tell "$GPG_EMAIL"
+
+          # Ensure secret.env exists (ignored in .gitignore)
+          touch secret.env
+          if ! grep -q "^API_KEY=" secret.env; then
+            echo "API_KEY=change_me" >> secret.env
+          fi
+
+          git secret add secret.env
+          git secret hide
+
+      - name: Commit and push encrypted secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add secret.env.secret .gitignore .gitsecret/keys/ || true
+
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(secrets): add git-secret encrypted secret"
+            git push
+          else
+            echo "No encrypted secret changes to commit."
+          fi
