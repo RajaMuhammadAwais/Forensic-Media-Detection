@@ -257,6 +257,52 @@ You can use the following pretrained models with the FMD tool for each modality:
 - **Explainable AI**: Interpretable detection results
 - **Cross-dataset Generalization**: Improved performance across different datasets (partially addressed by ViT model)
 
+## 12. GitHub Analytics Charts
+
+You can generate clean, GitHub-themed analytics charts (PNG and SVG) directly from the repository's live GitHub data.
+
+Charts produced:
+1. Contribution activity (commits per month)
+2. Code frequency (lines added vs deleted per week)
+3. Commit activity (commits per week)
+4. Release downloads trend (downloads per version)
+5. Issues trend (open vs closed issues per month)
+6. Software performance (latency per version) — optional, from a local JSON file
+
+How to generate:
+```bash
+# Optional: set a token to avoid API rate limits
+export GITHUB_TOKEN=ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Optional: override owner/repo/output directory
+export GH_OWNER=RajaMuhammadAwais
+export GH_REPO=Forensic-Media-Detection
+export CHARTS_OUTDIR=documentation/charts
+
+# Run the generator
+python documentation/fetch_and_plot_github_stats.py
+```
+
+Optional performance data:
+- Create documentation/performance_data.json with contents like:
+```json
+{ "v1.0": 85, "v1.1": 78, "v1.2": 72 }
+```
+
+Generated files (by default):
+- documentation/charts/contribution_activity.{png,svg}
+- documentation/charts/code_frequency.{png,svg}
+- documentation/charts/commit_activity.{png,svg}
+- documentation/charts/release_downloads.{png,svg}
+- documentation/charts/issues_trend.{png,svg}
+- documentation/charts/latency_per_version.{png,svg}
+
+Embed in README (example):
+```markdown
+![Contribution Activity](documentation/charts/contribution_activity.png)
+![Code Frequency](documentation/charts/code_frequency.png)
+```
+
   # Forensic Media Detection (FMD) Tool - User Manual
 
 ## 1. Introduction
