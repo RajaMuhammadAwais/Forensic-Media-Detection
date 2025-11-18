@@ -37,6 +37,7 @@ jobs:
       - name: Commit and push if changed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -e
           if [[ -n "$(git status --porcelain graph.png)" ]]; then
