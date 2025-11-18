@@ -103,14 +103,14 @@ jobs:
           # If no keys exist, generate one non-interactively
           if ! gpg --list-keys >/dev/null 2>&1; then
             cat >key.conf <<'EOF'
-            %no-protection
-            Key-Type: default
-            Key-Length: 3072
-            Subkey-Type: default
-            Name-Real: GitHub Actions
-            Name-Email: ${GPG_EMAIL}
-            Expire-Date: 0
-            EOF
+%no-protection
+Key-Type: default
+Key-Length: 3072
+Subkey-Type: default
+Name-Real: GitHub Actions
+Name-Email: ${GPG_EMAIL}
+Expire-Date: 0
+EOF
             gpg --batch --gen-key key.conf
           fi
           gpg --list-keys
