@@ -262,12 +262,12 @@ You can use the following pretrained models with the FMD tool for each modality:
 This repository automatically generates a daily commit activity graph via GitHub Actions. The workflow runs on a schedule and updates the image at the root of the repo.
 
 Current auto-generated chart:
-![Commit Activity (last 365 days)](graph.png)
+![Commit Activity (last 365 days)](assets/graph.png)
 
 ```
 
 Notes:
-- The GitHub Action defined in .github/workflows/commit-graph.yml installs minimal dependencies, generates graph.png, and commits it back to the repository.
+- The GitHub Action defined in .github/workflows/update-activity-graph.yml installs minimal dependencies, generates assets/graph.png, and commits it back to the repository.
 - If you fork this repo, ensure Actions are enabled in your fork and that the default branch has workflow permissions to write contents.
 
   # Forensic Media Detection (FMD) Tool - User Manual
