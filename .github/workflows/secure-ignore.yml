@@ -44,17 +44,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm --cached -f secret.env || true
-          git rm --cached -f config.json || true
-          git rm --cached -r -f build || true
-          git rm --cached -r -f node_modules || true
-
-          # Untrack any tracked *.log files
-          tracked_logs=$(git ls-files '*.log' || true)
-          if [ -n "${tracked_logs}" ]; then
-            # Use xargs -r to avoid running with empty input
-            printf "%s\n" "${tracked_logs}" | xargs -r git rm --cached -f || true
-          fi
+          # Exact commands requested
+          git rm --cached secret.env || true
+          git rm --cached config.json || true
+          git rm --cached -r build || true
+          git rm --cached -r node_modules || true
+          git rm --cached '*.log' || true
 
       - name: Commit and push changes (if any)
         shell: bash
@@ -62,13 +57,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Stage .gitignore and any removals
           git add .gitignore || true
-
-          # Commit only if there are staged changes
           if ! git diff --cached --quiet; then
-            git commit -m "chore: enforce ignores and untrack secret/log/build/node_modules"
+            git commit -m "chore: ignore secrets, logs, build, and node_modules"
             git push
           else
             echo "No changes to commit."
@@ -85,14 +76,12 @@ jobs:
       - name: Mark files as assume-unchanged (local-only effect)
         shell: bash
         run: |
-          git update-index --assume-unchanged secret.env || true
-          git update-index --assume-unchanged config.json || true
+          # Exact commands requested
+          git update-index --assume-unchanged secret.env config.json || true
 
   git-secret:
-    name: git-secret setup and encrypt
+    name: git-secret quickstart and encrypt
     runs-on: ubuntu-latest
-    # Requires repository secrets: GPG_PRIVATE_KEY, GPG_PASSPHRASE (optional), GPG_EMAIL
-    if: ${{ secrets.GPG_PRIVATE_KEY != '' && secrets.GPG_EMAIL != '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -105,35 +94,38 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git-secret gnupg
 
-      - name: Import GPG private key
+      - name: Generate a GPG key (non-interactive) if none provided
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_EMAIL: ${{ secrets.GPG_EMAIL || github.actor }}@users.noreply.github.com
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${GPG_PASSPHRASE:-}" ]; then
-            echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import
-          else
-            echo "$GPG_PRIVATE_KEY" | gpg --batch --yes --import
+          # If no keys exist, generate one non-interactively
+          if ! gpg --list-keys >/dev/null 2>&1; then
+            cat >key.conf <<'EOF'
+            %no-protection
+            Key-Type: default
+            Key-Length: 3072
+            Subkey-Type: default
+            Name-Real: GitHub Actions
+            Name-Email: ${GPG_EMAIL}
+            Expire-Date: 0
+            EOF
+            gpg --batch --gen-key key.conf
           fi
           gpg --list-keys
 
       - name: Initialize git-secret, add user, add and encrypt secret file
         env:
-          GPG_EMAIL: ${{ secrets.GPG_EMAIL }}
+          GPG_EMAIL: ${{ secrets.GPG_EMAIL || github.actor }}@users.noreply.github.com
         shell: bash
         run: |
           set -euo pipefail
+          # Exact commands requested
           git secret init || true
+          gpg --list-keys
           git secret tell "$GPG_EMAIL"
-
-          # Ensure secret.env exists (ignored in .gitignore)
           touch secret.env
-          if ! grep -q "^API_KEY=" secret.env; then
-            echo "API_KEY=change_me" >> secret.env
-          fi
-
           git secret add secret.env
           git secret hide
 
@@ -143,11 +135,9 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add secret.env.secret .gitignore .gitsecret/keys/ || true
-
           if ! git diff --cached --quiet; then
-            git commit -m "chore(secrets): add git-secret encrypted secret"
+            git commit -m "chore(secrets): add encrypted secret"
             git push
           else
             echo "No encrypted secret changes to commit."
