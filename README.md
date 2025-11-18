@@ -419,10 +419,12 @@ To keep analytics visible at the end of the README (not in assets), the followin
   ![Contribution Activity](https://github-readme-activity-graph.vercel.app/graph?username=RajaMuhammadAwais&custom_title=Contribution%20Graph&hide_border=true&bg_color=0d1117&color=58a6ff&line=58a6ff&point=ffffff)
 
 
-  ![Code Frequency](code_frequency.png)
+
+  ![Code Frequency](assets/code_frequency.png)
 
 
-  ![Commit Activity](graph.png)
 
-  ![Issues & PRs Trend](issues_pr_trend.png)
+  ![Commit Activity](assets/graph.png)
+
+  ![Issues & PRs Trend](assets/issues_pr_trend.png)
 

@@ -206,12 +206,15 @@ def main() -> int:
 
     # Code frequency (additions vs deletions)
     weekly_cf = fetch_code_frequency(session, owner, repo)
-    generate_code_frequency_png(weekly_cf, "code_frequency.png")
+    # Ensure assets directory exists
+    os.makedirs("assets", exist_ok=True)
+
+    generate_code_frequency_png(weekly_cf, os.path.join("assets", "code_frequency.png"))
 
     # Issues & PR trend (last 26 weeks)
-    generate_issues_pr_trend_png(session, owner, repo, weeks_back=26, out_path="issues_pr_trend.png")
+    generate_issues_pr_trend_png(session, owner, repo, weeks_back=26, out_path=os.path.join("assets", "issues_pr_trend.png"))
 
-    print("Generated: code_frequency.png, issues_pr_trend.png")
+    print("Generated: assets/code_frequency.png, assets/issues_pr_trend.png")
     return 0
 
 
