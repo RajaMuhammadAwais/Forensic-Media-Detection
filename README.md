@@ -411,9 +411,8 @@ The FMD tool provides detailed analysis results, typically in JSON format when t
 
 For further assistance, please refer to the project's documentation or contact support.
 
-## GitHub Repository Insights
+## Insights
 
-To keep analytics visible at the end of the README (not in assets), the following live and auto-generated graphs are included:
 
 
   ![Contribution Activity](https://github-readme-activity-graph.vercel.app/graph?username=RajaMuhammadAwais&custom_title=Contribution%20Graph&hide_border=true&bg_color=0d1117&color=58a6ff&line=58a6ff&point=ffffff)
