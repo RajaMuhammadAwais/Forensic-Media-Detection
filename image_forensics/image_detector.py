@@ -1,11 +1,6 @@
 # Image Forensics Module
 
-import tensorflow as tf
-import torch
-from .vit_detector import ViTDeepfakeDetector
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Flatten, Reshape, Conv2D, Conv2DTranspose
-from tensorflow.keras.applications import Xception
+# Lazy-import heavy ML frameworks to avoid unnecessary CI dependencies
 import numpy as np
 import cv2
 import os
@@ -14,18 +9,25 @@ class ImageDetector:
     def __init__(self, model_type='xception'):
         self.model_type = model_type
         self.model = None
-        self.is_pytorch = False # Flag to distinguish between TF and PyTorch models
+        self.is_pytorch = False  # Flag to distinguish between TF and PyTorch models
 
     def build_model(self, input_shape=(256, 256, 3)):
-        self.is_pytorch = False # Default to TensorFlow
+        self.is_pytorch = False  # Default to TensorFlow
         
         if self.model_type == 'vit':
-            # PyTorch ViT Model
+            # Import PyTorch ViT model only when needed
+            from .vit_detector import ViTDeepfakeDetector
             self.model = ViTDeepfakeDetector()
             self.is_pytorch = True
-            return # PyTorch model is built and ready
+            return  # PyTorch model is built and ready
             
         elif self.model_type == 'xception':
+            # Import TensorFlow/Keras only when building TF models
+            import tensorflow as tf
+            from tensorflow.keras.models import Model
+            from tensorflow.keras.layers import Input, Dense, Conv2D, Conv2DTranspose
+            from tensorflow.keras.applications import Xception
+
             # Use Xception as base model for deepfake detection
             base_model = Xception(weights='imagenet', include_top=False, input_shape=input_shape)
             
@@ -48,6 +50,11 @@ class ImageDetector:
             )
             
         elif self.model_type == 'autoencoder':
+            # Import TensorFlow/Keras only when building TF models
+            import tensorflow as tf
+            from tensorflow.keras.models import Model
+            from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose
+
             # Autoencoder for anomaly detection
             input_img = Input(shape=input_shape)
             
@@ -72,7 +79,8 @@ class ImageDetector:
             x = tf.keras.layers.UpSampling2D((2, 2))(x)
             decoded = Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
 
-            self.model = Model(input_img, decoded)
+            from tensorflow.keras.models import Model as KerasModel
+            self.model = KerasModel(input_img, decoded)
             self.model.compile(optimizer='adam', loss='mse', metrics=['mae'])
             
         else:
@@ -80,10 +88,11 @@ class ImageDetector:
 
     def preprocess_image(self, image_path, target_size=(256, 256)):
         if self.is_pytorch:
-            # Use PyTorch-specific preprocessing
+            # Import here to avoid torch dependency unless needed
+            from .vit_detector import ViTDeepfakeDetector
             return ViTDeepfakeDetector.preprocess_image(image_path)
         
-        # Existing TensorFlow preprocessing
+        # Existing TensorFlow/CV2 preprocessing
         if isinstance(image_path, str):
             # Load from file path
             img = cv2.imread(image_path)
@@ -164,6 +173,7 @@ class ImageDetector:
         if self.model is None:
             self.build_model()
         
+        import tensorflow as tf
         callbacks = [
             tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
             tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3)
@@ -183,6 +193,8 @@ class ImageDetector:
         if self.is_pytorch:
             # PyTorch prediction logic
             if isinstance(image, str):
+                # Import here to avoid torch dependency unless needed
+                # The ViT model encapsulates its own prediction pipeline
                 return self.model.predict(image)['is_fake_probability']
             else:
                 raise ValueError("PyTorch model prediction expects a file path.")
@@ -192,6 +204,7 @@ class ImageDetector:
             raise ValueError("Model not built or trained.")
         
         # Ensure image is in correct format
+        import numpy as np
         if len(image.shape) == 3:
             image = np.expand_dims(image, axis=0)
         
@@ -209,16 +222,13 @@ class ImageDetector:
                     # PyTorch model handles its own preprocessing
                     pred = self.predict(image_path)
                     model_prediction = float(pred)
-                    # For PyTorch, we skip the CV2-based analysis for now
-                    # as the preprocessing is different and the model is the primary focus
-                    
                     # Return a simplified result for PyTorch model
                     return {
                         'file_path': image_path,
                         'model_prediction': model_prediction,
                         'overall_assessment': {
                             'deepfake_probability': model_prediction,
-                            'confidence': 0.9 # High confidence for a state-of-the-art model
+                            'confidence': 0.9  # Placeholder confidence
                         }
                     }
                 
@@ -255,55 +265,7 @@ class ImageDetector:
         }
         
         # Calculate overall assessment
-        scores = []
-        if model_prediction is not None:
-            scores.append(model_prediction)
-        scores.append(pixel_analysis['inconsistency_score'] * 2)  # Scale up
-        scores.append(lighting_analysis['confidence'] if lighting_analysis['is_inconsistent'] else 0)
-        
-        overall_prob = np.mean(scores) if scores else 0.5
-        overall_conf = 1.0 - np.std(scores) if len(scores) > 1 else 0.5
-        
-        results['overall_assessment']['deepfake_probability'] = float(overall_prob)
-        results['overall_assessment']['confidence'] = float(overall_conf)
-        
-        return results
-        """Comprehensive image analysis"""
-        # Preprocess image
-        image = self.preprocess_image(image_path)
-        
-        # Pixel inconsistency analysis
-        pixel_analysis = self.detect_pixel_inconsistencies(image)
-        
-        # Lighting consistency analysis
-        lighting_analysis = self.analyze_lighting_consistency(image)
-        
-        # Model prediction (if available)
-        model_prediction = None
-        if self.model is not None:
-            try:
-                pred = self.predict(image)
-                model_prediction = float(pred[0][0])
-            except Exception as e:
-                print(f"Model prediction failed: {e}")
-                model_prediction = 0.5  # Neutral prediction
-        
-        # Combine analyses
-        results = {
-            'file_path': image_path,
-            'model_prediction': model_prediction,
-            'pixel_inconsistencies': {
-                'score': pixel_analysis['inconsistency_score'],
-                'detected': pixel_analysis['inconsistency_score'] > 0.1
-            },
-            'lighting_analysis': lighting_analysis,
-            'overall_assessment': {
-                'deepfake_probability': 0.0,
-                'confidence': 0.0
-            }
-        }
-        
-        # Calculate overall assessment
+        import numpy as np
         scores = []
         if model_prediction is not None:
             scores.append(model_prediction)
@@ -320,10 +282,10 @@ class ImageDetector:
 
     def save_model(self, path):
         if self.is_pytorch:
+            import torch
             torch.save(self.model.state_dict(), path)
             return
             
-        """Save the trained model"""
         """Save the trained model"""
         if self.model is None:
             raise ValueError("No model to save.")
@@ -331,13 +293,15 @@ class ImageDetector:
 
     def load_model(self, path):
         if self.is_pytorch:
+            from .vit_detector import ViTDeepfakeDetector
+            import torch
             self.model = ViTDeepfakeDetector()
             self.model.load_state_dict(torch.load(path))
             self.model.eval()
             return
             
         """Load a trained model"""
-        """Load a trained model"""
+        import tensorflow as tf
         if not os.path.exists(path):
             raise ValueError(f"Model file not found: {path}")
         self.model = tf.keras.models.load_model(path)
@@ -369,7 +333,7 @@ if __name__ == '__main__':
     detector.build_model()
     print("XceptionNet model built successfully!")
     detector.model.summary()
-
+    
     print("\nTesting Autoencoder based Image Detector...")
     autoencoder = ImageDetector(model_type='autoencoder')
     autoencoder.build_model()

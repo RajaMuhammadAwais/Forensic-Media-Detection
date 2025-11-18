@@ -1,18 +1,23 @@
 # Video Forensics Module
 
-import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, LSTM, Conv2D, TimeDistributed, Flatten
-from tensorflow.keras.applications import Xception # Using Xception for frame feature extraction
+# Lazy-import heavy ML frameworks to avoid unnecessary CI dependencies
 import cv2
 import numpy as np
 import os
 import glob
 
 class VideoDetector:
-    def __init__(self, model_type='cnn_lstm'):
+    def __init__(self, model_type='cnn_lstm', use_wavelet_preprocessor=False):
         self.model_type = model_type
         self.model = None
+        self.preprocessor = None
+        if use_wavelet_preprocessor:
+            try:
+                from .wavelet_preprocessing import WaveletPreprocessor
+                self.preprocessor = WaveletPreprocessor()
+            except Exception:
+                # Fallback: leave preprocessor as None if import fails
+                self.preprocessor = None
 
     def build_model(self, input_shape=(None, 256, 256, 3)):
         """
@@ -20,13 +25,16 @@ class VideoDetector:
         input_shape: (timesteps, height, width, channels). Timesteps can be None for variable length.
         """
         if self.model_type == 'cnn_lstm':
+            # Import TensorFlow/Keras only when building the model
+            import tensorflow as tf
+            from tensorflow.keras.models import Model
+            from tensorflow.keras.layers import Input, Dense, LSTM, TimeDistributed
+            from tensorflow.keras.applications import Xception  # Using Xception for frame feature extraction
+
             # Input for sequences of frames
             video_input = Input(shape=input_shape)
             
             # Use a pre-trained CNN (Xception) for spatial feature extraction from each frame
-            # We need to wrap Xception in TimeDistributed to apply it to each frame in the sequence
-            # Set include_top=False to remove the classification head
-            # Use weights="imagenet" for pre-trained weights
             base_cnn = Xception(weights='imagenet', include_top=False, pooling='avg')
             
             # Freeze the layers of the pre-trained CNN to use it as a fixed feature extractor
@@ -37,7 +45,6 @@ class VideoDetector:
             cnn_features = TimeDistributed(base_cnn)(video_input)
             
             # LSTM layers for temporal analysis
-            # return_sequences=True to stack LSTM layers
             lstm_out = LSTM(256, return_sequences=True)(cnn_features)
             lstm_out = tf.keras.layers.Dropout(0.3)(lstm_out)
             lstm_out = LSTM(128)(lstm_out)
@@ -54,6 +61,7 @@ class VideoDetector:
             )
         else:
             raise ValueError("Unsupported model type for Video Forensics.")
+
     def extract_frames(self, video_path, num_frames=30, target_size=(256, 256)):
         """Extract frames from video for analysis and preprocess them.
 
@@ -136,8 +144,8 @@ class VideoDetector:
         """
         print(f"Performing simulated lip-sync analysis for video: {video_path} and audio: {audio_path}")
         # Simulate results for now
-        sync_score = np.random.uniform(0.5, 1.0) # Higher score means better sync
-        mismatch_detected = sync_score < 0.75 # Example threshold
+        sync_score = np.random.uniform(0.5, 1.0)  # Higher score means better sync
+        mismatch_detected = sync_score < 0.75  # Example threshold
         
         return {
             "sync_score": float(sync_score),
@@ -151,6 +159,7 @@ class VideoDetector:
         if self.model is None:
             self.build_model()
         
+        import tensorflow as tf
         callbacks = [
             tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
             tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3)
@@ -172,8 +181,8 @@ class VideoDetector:
             raise ValueError("Model not built or trained.")
         
         # Ensure input is batched (add batch dimension if missing)
-        if len(video_frames.shape) == 4: # (num_frames, height, width, channels)
-            video_frames = np.expand_dims(video_frames, axis=0) # Add batch dimension
+        if len(video_frames.shape) == 4:  # (num_frames, height, width, channels)
+            video_frames = np.expand_dims(video_frames, axis=0)  # Add batch dimension
             
         prediction = self.model.predict(video_frames, verbose=0)
         return prediction
@@ -186,6 +195,7 @@ class VideoDetector:
 
     def load_model(self, path):
         """Load a trained model"""
+        import tensorflow as tf
         if not os.path.exists(path):
             raise ValueError(f"Model file not found: {path}")
         self.model = tf.keras.models.load_model(path)
