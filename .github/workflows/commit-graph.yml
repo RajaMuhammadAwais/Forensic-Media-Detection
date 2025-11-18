@@ -2,6 +2,10 @@ name: Repository Trend Graphs
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
   schedule:
     - cron: "17 2 * * *"  # daily at 02:17 UTC
 
@@ -16,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false  # we'll use a token explicitly when pushing
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -46,6 +51,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           set -e
           CHANGED=""
@@ -61,7 +67,8 @@ jobs:
             git commit -m "chore: update repository trend graphs [skip ci]"
             # Use a token to push back
             repo_url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-            git push "${repo_url}" HEAD:${GITHUB_REF#refs/heads/}
+            # Push back to the checked-out branch name
+            git push "${repo_url}" HEAD:${GITHUB_REF_NAME}
           else
             echo "No changes to commit."
           fi
