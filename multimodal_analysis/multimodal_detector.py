@@ -1,9 +1,6 @@
 # Multimodal Analysis Module
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Concatenate, Dropout
 import os
 import sys
 from pathlib import Path
@@ -14,6 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from image_forensics.image_detector import ImageDetector
 from video_forensics.video_detector import VideoDetector
 from audio_forensics.audio_detector import AudioDetector
+from multimodal_analysis.audio_visual_verifier import AudioVisualVerifier
 
 class MultimodalDetector:
     def __init__(self, fusion_type="late"):
@@ -21,10 +19,16 @@ class MultimodalDetector:
         self.image_detector = ImageDetector()
         self.video_detector = VideoDetector()
         self.audio_detector = AudioDetector()
+        self.av_verifier = AudioVisualVerifier()
         self.fusion_model = None
 
     def build_fusion_model(self):
         """Build multimodal fusion model"""
+        # Import TensorFlow/Keras only when building the fusion model
+        import tensorflow as tf
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.layers import Input, Dense, Concatenate, Dropout
+
         if self.fusion_type == "late":
             # Late fusion: combine predictions from individual models
             image_input = Input(shape=(1,), name="image_prediction")
@@ -60,7 +64,7 @@ class MultimodalDetector:
         predictions = np.array([image_pred, video_pred, audio_pred])
         
         # Calculate variance across modalities
-        consistency_score = 1.0 - np.var(predictions) # Higher score means more consistent
+        consistency_score = 1.0 - np.var(predictions)  # Higher score means more consistent
         
         # Check for outliers (predictions significantly different from the mean)
         mean_pred = np.mean(predictions)
@@ -134,10 +138,15 @@ class MultimodalDetector:
                     video_pred = np.random.uniform(0, 1)
                     results["video_analysis"] = {
                         "deepfake_probability": float(video_pred),
-                        "lip_sync_mismatch": self.video_detector.analyze_lip_sync(media_path, "dummy_audio.wav") # Dummy audio path
+                        "lip_sync_mismatch": self.video_detector.analyze_lip_sync(media_path, "dummy_audio.wav"),
+                        "audio_visual_consistency": self.av_verifier.verify_consistency(media_path, media_path)
                     }
                 else:
-                    results["video_analysis"] = {"status": "No frames extracted"}
+                    # Still provide audio-visual consistency structure even if frames were not extracted
+                    results["video_analysis"] = {
+                        "status": "No frames extracted",
+                        "audio_visual_consistency": self.av_verifier.verify_consistency(media_path, media_path)
+                    }
             except Exception as e:
                 print(f"Error during video analysis: {e}")
                 results["video_analysis"] = {"error": str(e)}
@@ -206,6 +215,7 @@ class MultimodalDetector:
         self.video_detector.load_model(f"{base_path}_video.h5")
         self.audio_detector.load_model(f"{base_path}_audio.h5")
         if self.fusion_model:
+            import tensorflow as tf
             self.fusion_model = tf.keras.models.load_model(f"{base_path}_fusion.h5")
 
 if __name__ == "__main__":

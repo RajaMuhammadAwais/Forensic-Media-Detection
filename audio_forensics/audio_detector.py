@@ -2,9 +2,6 @@
 
 import librosa
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, LSTM, Conv1D, GlobalMaxPooling1D, Dropout
 from sklearn.preprocessing import StandardScaler
 import os
 
@@ -28,7 +25,7 @@ class AudioDetector:
         mfccs = mfccs.T
         
         # Scale features (important for x-vectors)
-        if self.scaler.mean_ is None:
+        if getattr(self.scaler, "mean_", None) is None:
             self.scaler.fit(mfccs)
         mfccs = self.scaler.transform(mfccs)
         
@@ -36,6 +33,11 @@ class AudioDetector:
 
     def build_model(self, input_shape=(None, 20)):  # (timesteps, n_mfcc)
         """Build x-vector inspired model for speaker verification/deepfake detection"""
+        # Lazy import TensorFlow/Keras to avoid heavy CI dependency unless needed
+        import tensorflow as tf
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.layers import Input, Dense, LSTM, Conv1D, Dropout
+
         if self.model_type == "xvector":
             input_layer = Input(shape=input_shape)
             
@@ -114,7 +116,7 @@ class AudioDetector:
         flatness_std = np.std(flatness)
         
         # Heuristic for anomaly: high variance in frequency or unusual flatness
-        anomaly_score = (np.mean(freq_std) + np.abs(flatness_mean - 0.5)) / 2.0 # Normalize to 0-1
+        anomaly_score = (np.mean(freq_std) + np.abs(flatness_mean - 0.5)) / 2.0  # Normalize to 0-1
         
         return {
             "anomaly_score": float(anomaly_score),
@@ -137,7 +139,7 @@ class AudioDetector:
         
         # Simple heuristic for synthesis detection
         # Lower MFCC variance and unusual spectral flatness could indicate synthesis
-        synthesis_confidence = 1.0 - avg_mfcc_variance # Lower variance -> higher confidence
+        synthesis_confidence = 1.0 - avg_mfcc_variance  # Lower variance -> higher confidence
         synthesis_confidence = (synthesis_confidence + spectral_analysis["anomaly_score"]) / 2.0
         
         return {
@@ -151,6 +153,7 @@ class AudioDetector:
         if self.model is None:
             self.build_model()
         
+        import tensorflow as tf
         callbacks = [
             tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
             tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=3)
@@ -172,8 +175,8 @@ class AudioDetector:
             raise ValueError("Model not built or trained.")
         
         # Ensure input is batched (add batch dimension if missing)
-        if len(audio_features.shape) == 2: # (timesteps, n_mfcc)
-            audio_features = np.expand_dims(audio_features, axis=0) # Add batch dimension
+        if len(audio_features.shape) == 2:  # (timesteps, n_mfcc)
+            audio_features = np.expand_dims(audio_features, axis=0)  # Add batch dimension
             
         prediction = self.model.predict(audio_features, verbose=0)
         return prediction
@@ -186,6 +189,7 @@ class AudioDetector:
 
     def load_model(self, path):
         """Load a trained model"""
+        import tensorflow as tf
         if not os.path.exists(path):
             raise ValueError(f"Model file not found: {path}")
         self.model = tf.keras.models.load_model(path)
