@@ -44,3 +44,13 @@ Thumbs.db
 .github/workflows/*.log
 .github/actions/*
 
+# Secrets
+secret.env
+config.json
+
+# Logs
+*.log
+
+# Node.js
+node_modules/
+
