@@ -424,3 +424,5 @@ The FMD tool provides detailed analysis results, typically in JSON format when t
 
 For further assistance, please refer to the project's documentation or contact support.
 
+![Activity Graph](assets/graph.png)
+
