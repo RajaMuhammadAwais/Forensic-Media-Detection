@@ -11,6 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from image_forensics.image_detector import ImageDetector
 from video_forensics.video_detector import VideoDetector
 from audio_forensics.audio_detector import AudioDetector
+from multimodal_analysis.audio_visual_verifier import AudioVisualVerifier
 
 class MultimodalDetector:
     def __init__(self, fusion_type="late"):
@@ -18,6 +19,7 @@ class MultimodalDetector:
         self.image_detector = ImageDetector()
         self.video_detector = VideoDetector()
         self.audio_detector = AudioDetector()
+        self.av_verifier = AudioVisualVerifier()
         self.fusion_model = None
 
     def build_fusion_model(self):
@@ -136,10 +138,15 @@ class MultimodalDetector:
                     video_pred = np.random.uniform(0, 1)
                     results["video_analysis"] = {
                         "deepfake_probability": float(video_pred),
-                        "lip_sync_mismatch": self.video_detector.analyze_lip_sync(media_path, "dummy_audio.wav")  # Dummy audio path
+                        "lip_sync_mismatch": self.video_detector.analyze_lip_sync(media_path, "dummy_audio.wav"),
+                        "audio_visual_consistency": self.av_verifier.verify_consistency(media_path, media_path)
                     }
                 else:
-                    results["video_analysis"] = {"status": "No frames extracted"}
+                    # Still provide audio-visual consistency structure even if frames were not extracted
+                    results["video_analysis"] = {
+                        "status": "No frames extracted",
+                        "audio_visual_consistency": self.av_verifier.verify_consistency(media_path, media_path)
+                    }
             except Exception as e:
                 print(f"Error during video analysis: {e}")
                 results["video_analysis"] = {"error": str(e)}
