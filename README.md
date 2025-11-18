@@ -259,49 +259,26 @@ You can use the following pretrained models with the FMD tool for each modality:
 
 ## 12. GitHub Analytics Charts
 
-You can generate clean, GitHub-themed analytics charts (PNG and SVG) directly from the repository's live GitHub data.
+This repository automatically generates a daily commit activity graph via GitHub Actions. The workflow runs on a schedule and updates the image at the root of the repo.
 
-Charts produced:
-1. Contribution activity (commits per month)
-2. Code frequency (lines added vs deleted per week)
-3. Commit activity (commits per week)
-4. Release downloads trend (downloads per version)
-5. Issues trend (open vs closed issues per month)
-6. Software performance (latency per version) — optional, from a local JSON file
+Current auto-generated chart:
+![Commit Activity (last 365 days)](graph.png)
 
-How to generate:
+Manual generation (optional):
 ```bash
 # Optional: set a token to avoid API rate limits
 export GITHUB_TOKEN=ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-# Optional: override owner/repo/output directory
-export GH_OWNER=RajaMuhammadAwais
-export GH_REPO=Forensic-Media-Detection
-export CHARTS_OUTDIR=documentation/charts
+# Provide owner/repo explicitly if not running in GitHub Actions
+export GITHUB_REPOSITORY="RajaMuhammadAwais/Forensic-Media-Detection"
 
 # Run the generator
-python documentation/fetch_and_plot_github_stats.py
+python scripts/github_commits_graph.py --days 365 --output graph.png
 ```
 
-Optional performance data:
-- Create documentation/performance_data.json with contents like:
-```json
-{ "v1.0": 85, "v1.1": 78, "v1.2": 72 }
-```
-
-Generated files (by default):
-- documentation/charts/contribution_activity.{png,svg}
-- documentation/charts/code_frequency.{png,svg}
-- documentation/charts/commit_activity.{png,svg}
-- documentation/charts/release_downloads.{png,svg}
-- documentation/charts/issues_trend.{png,svg}
-- documentation/charts/latency_per_version.{png,svg}
-
-Embed in README (example):
-```markdown
-![Contribution Activity](documentation/charts/contribution_activity.png)
-![Code Frequency](documentation/charts/code_frequency.png)
-```
+Notes:
+- The GitHub Action defined in .github/workflows/commit-graph.yml installs minimal dependencies, generates graph.png, and commits it back to the repository.
+- If you fork this repo, ensure Actions are enabled in your fork and that the default branch has workflow permissions to write contents.
 
   # Forensic Media Detection (FMD) Tool - User Manual
 
