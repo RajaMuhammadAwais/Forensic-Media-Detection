@@ -27,14 +27,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install matplotlib==3.* requests==2.* pandas==2.*
 
-      - name: Generate commit activity graph (graph.png)
+      - name: Generate commit activity graph (assets/graph.png)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          python scripts/github_commits_graph.py --days 365 --output graph.png
+          mkdir -p assets
+          python scripts/github_commits_graph.py --days 365 --output assets/graph.png
 
-      - name: Generate code frequency and issues/PR trend graphs
+      - name: Generate code frequency and issues/PR trend graphs (assets/)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -48,7 +49,7 @@ jobs:
         run: |
           set -e
           CHANGED=""
-          for f in graph.png code_frequency.png issues_pr_trend.png; do
+          for f in assets/graph.png assets/code_frequency.png assets/issues_pr_trend.png; do
             if [[ -n "$(git status --porcelain "$f")" ]]; then
               CHANGED="yes"
               git add "$f"
