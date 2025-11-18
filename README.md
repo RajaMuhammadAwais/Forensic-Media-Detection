@@ -415,15 +415,14 @@ For further assistance, please refer to the project's documentation or contact s
 
 To keep analytics visible at the end of the README (not in assets), the following live and auto-generated graphs are included:
 
-- Contribution Graph (user activity):
+
   ![Contribution Activity](https://github-readme-activity-graph.vercel.app/graph?username=RajaMuhammadAwais&custom_title=Contribution%20Graph&hide_border=true&bg_color=0d1117&color=58a6ff&line=58a6ff&point=ffffff)
 
-- Code Frequency (Additions vs Deletions):
+
   ![Code Frequency](code_frequency.png)
 
-- Commit Activity (last 365 days):
+
   ![Commit Activity](graph.png)
 
-- Issues & Pull Requests Trend:
   ![Issues & PRs Trend](issues_pr_trend.png)
 
