@@ -419,11 +419,19 @@ For further assistance, please refer to the project's documentation or contact s
 
 
 
+
+
   ![Code Frequency](assets/code_frequency.png)
 
 
 
+
+
   ![Commit Activity](assets/graph.png)
+
+
+
+  
 
   ![Issues & PRs Trend](assets/issues_pr_trend.png)
 
