@@ -32,14 +32,6 @@ def load_dataset(subset_name):
         interpolation='nearest',
         batch_size=BATCH_SIZE,
         shuffle=True if subset_name == "Train" else False,
-        # Use a subset of the data for faster training
-        # The total number of images is around 140k for train and 39k for validation
-        # We will use the first 10000 images for train and 2000 for validation
-        # This is a rough way to limit the dataset size, but effective for POC
-        # max_samples = SUBSET_SIZE if subset_name == "Train" else SUBSET_SIZE // 5
-        # Note: Keras image_dataset_from_directory does not have a max_samples argument.
-        # We will rely on the dataset size and stop the training early.
-
         seed=42
     )
 
@@ -91,9 +83,8 @@ def main():
     # 4. Save Model
     print(f"\nSaving trained model weights to {MODEL_PATH}...")
     try:
-        # NOTE: The weights file is too large for GitHub. This line is kept for local use.
-        # detector.save_model(str(MODEL_PATH))
-        print("Model weights were not saved to the repository due to file size limits.")
+        detector.save_model(str(MODEL_PATH))
+        print("Model saved successfully.")
     except Exception as e:
         print(f"Error saving model: {e}")
         return
