@@ -34,6 +34,8 @@ def load_dataset(subset_name):
         shuffle=True if subset_name == "Train" else False,
         # Use a subset of the data for faster training
         # The total number of images is around 140k for train and 39k for validation
+# NOTE: Due to sandbox limitations, the training is only a proof-of-concept.
+# The user is expected to run the full training locally.
         # We will use the first 10000 images for train and 2000 for validation
         # This is a rough way to limit the dataset size, but effective for POC
         # max_samples = SUBSET_SIZE if subset_name == "Train" else SUBSET_SIZE // 5
@@ -77,12 +79,12 @@ def main():
     val_ds = val_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
     # 3. Train Model
-    print(f"\nStarting training for 3 epochs...")
+    print(f"\nStarting training for {EPOCHS} epochs...")
     try:
         # The train method expects the model to be compiled, which is done in build_model
         detector.train(train_ds.take(STEPS_PER_EPOCH), 
                        validation_dataset=val_ds.take(VALIDATION_STEPS), 
-                       epochs=3, 
+                       epochs=EPOCHS, 
                        batch_size=BATCH_SIZE)
     except Exception as e:
         print(f"Error during training: {e}")

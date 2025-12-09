@@ -263,7 +263,63 @@ You can use the following pretrained models with the FMD tool for each modality:
 
 The Forensic Media Detection (FMD) Tool is an AI & ML-driven command-line interface (CLI) application designed to detect deepfake artifacts in various media types, including images, videos, and audio files. This tool leverages advanced machine learning models to analyze media for inconsistencies and anomalies that may indicate manipulation.
 
-## 2. Installation
+## 2. Installation and Training (Lightweight Focus)
+
+This repository has been updated to focus on the lightweight **Image Forensics (XceptionNet)** model. The full set of dependencies has been simplified to ensure a cleaner, more focused development environment.
+
+### 2.1. Installation
+
+To use the Image Forensics module, you need to have Python 3.8+ installed on your system. It is recommended to use a virtual environment to manage dependencies.
+
+```bash
+# Clone the repository
+git clone https://github.com/RajaMuhammadAwais/Forensic-Media-Detection
+cd Forensic-Media-Detection
+
+# Install core dependencies for XceptionNet training
+pip install -r requirements_light.txt
+```
+
+### 2.2. Dataset Download and Preparation
+
+The `train_xception.py` script is configured to use a dataset with a specific folder structure. We recommend using the **Deepfake and Real Images** dataset from Kaggle.
+
+1.  **Install Kaggle API:**
+    ```bash
+    pip install kaggle
+    ```
+2.  **Set up Kaggle Credentials:**
+    *   Go to your Kaggle account settings and create a new API token.
+    *   Download the `kaggle.json` file and place it in the `~/.kaggle/` directory.
+3.  **Download the Dataset:**
+    ```bash
+    kaggle datasets download -d manjilkarki/deepfake-and-real-images
+    ```
+4.  **Unzip and Structure the Dataset:**
+    *   Unzip the downloaded file.
+    *   The `train_xception.py` script expects the data to be structured as follows inside the `data/Dataset/` directory:
+        ```
+        data/Dataset/
+        ├── Train/
+        │   ├── Real/
+        │   └── Fake/
+        └── Validation/
+            ├── Real/
+            └── Fake/
+        ```
+    *   You will need to manually create the `data/Dataset` directory and move the unzipped image folders into the correct `Train` and `Validation` subdirectories.
+
+### 2.3. Model Training
+
+Once the dataset is prepared, you can run the training script. The script is configured for a small, proof-of-concept run.
+
+```bash
+python train_xception.py
+```
+
+**Note:** The trained model weights (`xception_deepfake_weights.h5`) are excluded from the repository via `.gitignore` due to file size limits. You will need to train the model locally to use the detection features.
+
+
 
 To use the FMD Tool, you need to have Python 3.8+ installed on your system. It is recommended to use a virtual environment to manage dependencies.
 
@@ -277,10 +333,10 @@ python3.11 -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 
 # Install dependencies
-pip install tensorflow torch opencv-python scikit-learn librosa click numpy pandas matplotlib seaborn pydub
+pip install -r requirements_light.txt
 ```
 
-## 3. Usage
+## 4. Usage
 
 The FMD Tool is accessed via the `fmd` command, which provides subcommands for analyzing different media types. Below are the available commands and their options.
 
@@ -395,7 +451,7 @@ fmd info
 fmd info
 ```
 
-## 4. Output Interpretation
+## 5. Output Interpretation
 
 The FMD tool provides detailed analysis results, typically in JSON format when the `--output` option is used. The output includes:
 
@@ -403,7 +459,7 @@ The FMD tool provides detailed analysis results, typically in JSON format when t
 *   **Specific Anomalies:** Details about detected inconsistencies in pixels, lighting, frame-by-frame analysis, lip-sync, voice mismatch, and synthetic speech artifacts.
 *   **Overall Assessment:** A summary recommendation (e.g., "DEEPFAKE DETECTED", "SUSPICIOUS", "LIKELY AUTHENTIC").
 
-## 5. Troubleshooting
+## 6. Troubleshooting
 
 *   **"File not found" error:** Ensure the path to your media file is correct and the file exists.
 *   **Dependency issues:** If you encounter errors related to missing libraries, try reinstalling them using `pip install -r requirements.txt` (if a `requirements.txt` is provided) or the individual `pip install` commands listed in the Installation section.

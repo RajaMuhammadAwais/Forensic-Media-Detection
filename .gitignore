@@ -55,3 +55,10 @@ config.json
 node_modules/
 
 # Build
+# Model Weights
+*.h5
+*.pth
+*.pt
+
+# Simplified requirements file
+requirements_light.txt
