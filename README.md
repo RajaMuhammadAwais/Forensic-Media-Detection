@@ -309,15 +309,30 @@ The `train_xception.py` script is configured to use a dataset with a specific fo
         ```
     *   You will need to manually create the `data/Dataset` directory and move the unzipped image folders into the correct `Train` and `Validation` subdirectories.
 
-### 2.3. Model Training
+### 2.3. Pre-trained Model Download (Recommended for Immediate Use)
 
-Once the dataset is prepared, you can run the training script. The script is configured for a small, proof-of-concept run.
+To use the `fmd image` command immediately for forensic analysis, you can download a pre-trained Xception model.
+
+1.  **Download the Model Weights:**
+    *   The required file is `xception_deepfake_weights.h5`.
+    *   **Download Link:** [Kaggle Deepfake Xception Trained Model](https://www.kaggle.com/datasets/khoongweihao/deepfake-xception-trained-model)
+    *   You will need a Kaggle account and the Kaggle API installed to download this file. Use the following command:
+        ```bash
+        kaggle datasets download -d khoongweihao/deepfake-xception-trained-model
+        unzip deepfake-xception-trained-model.zip
+        ```
+2.  **Place the Model File:**
+    *   Place the downloaded `xception_deepfake_weights.h5` file directly into the root of the `Forensic-Media-Detection` directory.
+
+### 2.4. Local Training (Optional)
+
+If you wish to train your own model or fine-tune the existing one, follow the steps in 2.2 and then run the training script.
 
 ```bash
 python train_xception.py
 ```
 
-**Note:** The trained model weights (`xception_deepfake_weights.h5`) are excluded from the repository via `.gitignore` due to file size limits. You will need to train the model locally to use the detection features.
+**Note:** The trained model weights (`xception_deepfake_weights.h5`) are excluded from the repository via `.gitignore` due to file size limits. The code is configured to automatically load this file if it exists in the root directory.
 
 
 
