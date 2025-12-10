@@ -22,6 +22,16 @@ class ImageDetector:
             return  # PyTorch model is built and ready
             
         elif self.model_type == 'xception':
+            from pathlib import Path
+            model_path = Path(__file__).parent.parent / "xception_deepfake_weights.h5"
+            
+            if model_path.exists() and model_path.stat().st_size > 0:
+                print(f"Loading pre-trained Xception model from {model_path}...")
+                self.load_model(str(model_path))
+                return
+            
+            print("Pre-trained Xception model not found or is empty. Building model from scratch.")
+            # Import TensorFlow/Keras only when building TF models
             # Import TensorFlow/Keras only when building TF models
             import tensorflow as tf
             from tensorflow.keras.models import Model

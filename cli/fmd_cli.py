@@ -28,68 +28,38 @@ def fmd():
     pass
 
 @fmd.command()
-@click.option("--check", required=True, help="Path to image file to analyze")
-@click.option("--model", default="xception", help="Model to use (xception, autoencoder, vit)")
-@click.option("--detect", default="deepfake", help="Detection type")
-@click.option("--output", help="Output file for results (JSON format)")
-@click.option("--json", is_flag=True, help="Output results in JSON format to stdout")
+@click.option('--check', required=True, type=click.Path(exists=True), help='Path to the image file to analyze.')
+@click.option('--model', default='xception', type=click.Choice(['xception', 'autoencoder', 'vit']), help='Model to use for analysis.')
+@click.option('--detect', default='deepfake', type=click.Choice(['deepfake', 'anomaly']), help='Type of detection to perform.')
+@click.option('--output', type=click.Path(), help='Path to save the analysis results in JSON format.')
+@click.option('--json', is_flag=True, help='Output results in JSON format to stdout.')
 def image(check, model, detect, output, json):
-    """Analyze images for deepfake artifacts and manipulation."""
-    
-    if not os.path.exists(check):
-        error = {"status": "error", "error_code": "FILE_NOT_FOUND", "message": f"File {check} not found."}
-        if json:
-            click.echo(json.dumps(error))
-        else:
-            click.echo(f"Error: File {check} not found.", err=True)
-        return
-    
-    if not json:
-        click.echo(f"Analyzing image: {check}")
-        click.echo(f"Using model: {model}")
-    
+    """Analyze image files for deepfake artifacts and manipulation."""
     try:
-        # Initialize detector
+        from image_forensics.image_detector import ImageDetector
+        
         detector = ImageDetector(model_type=model)
-        detector.build_model()
+        detector.build_model() # Model loading is handled inside build_model now
         
-        # Use the comprehensive analysis method
         results = detector.analyze_image(check)
-        
-        # The analyze_image method already returns a complete dictionary of results
-        # We need to extract the final prediction for the CLI output
-        prediction = results['overall_assessment']['deepfake_probability']
         
         # Display results
         if json:
             click.echo(json.dumps({"status": "success", "results": results}))
         else:
             click.echo("\nImage Analysis Results:")
-            click.echo(f"- Deepfake Probability: {prediction:.1%}")
-            
-            # Display details from the comprehensive analysis
-            if 'pixel_inconsistencies' in results:
-                pixel_analysis = results['pixel_inconsistencies']
-                if pixel_analysis["detected"]:
-                    prob = pixel_analysis["score"]
-                    click.echo(f"- Pixel Inconsistencies: Detected with score {prob:.4f}.")
-            
-            if 'lighting_analysis' in results:
-                lighting_analysis = results['lighting_analysis']
-                if lighting_analysis["is_inconsistent"]:
-                    conf = lighting_analysis["confidence"]
-                    click.echo(f"- Lighting Mismatch: {conf:.0%} confidence of inconsistency.")
-            
-            if results['model_prediction'] is not None:
-                click.echo(f"- Model Prediction ({model}): {results['model_prediction']:.1%}")
+            click.echo(f"File: {check}")
+            click.echo(f"Model: {model}")
+            click.echo(f"Deepfake Probability: {results['overall_assessment']['deepfake_probability']:.4f}")
+            click.echo(f"Confidence: {results['overall_assessment']['confidence']:.4f}")
+            click.echo(f"Recommendation: {results['overall_assessment']['recommendation']}")
             
         if output:
             with open(output, "w") as f:
                 json.dump(results, f, indent=2)
             if not json:
                 click.echo(f"\nResults saved to: {output}")
-        
-
+                
     except Exception as e:
         error = {"status": "error", "error_code": "ANALYSIS_ERROR", "message": str(e)}
         if json:
